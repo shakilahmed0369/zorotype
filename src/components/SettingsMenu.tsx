@@ -1,10 +1,11 @@
 import type { ChangeEvent } from "react";
 import { useEngine } from "@/hooks/useEngine";
-import { applyKeyboardLayout, applyLayoutFile, clearAllData, openThemeModal, setLang, setPref } from "@/lib/engine";
+import { applyKeyboardLayout, applyLayoutFile, clearAllData, openBoardModal, openThemeModal, setLang, setPref } from "@/lib/engine";
+import { BOARD_CATALOG } from "@/lib/board-catalog";
 import { HARDWARE } from "@/lib/hardware";
 import { LANGUAGES } from "@/lib/languages";
 import { getTheme, listThemes } from "@/lib/themes";
-import type { Difficulty, HardwareId, LanguageCode, StopOnError } from "@/lib/types";
+import type { Difficulty, LanguageCode, StopOnError } from "@/lib/types";
 
 const SECTION_TITLE = "text-xs text-muted uppercase tracking-[1px] mb-[10px] pl-[5px]";
 const SECTION = "flex flex-col bg-key rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.15)]";
@@ -218,7 +219,7 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Hardware</span>
-              <span className={LABEL_DESC}>Select your physical keyboard shape, or load a layout .json</span>
+              <span className={LABEL_DESC}>Search {BOARD_CATALOG.length} keyboards, or load a layout .json</span>
             </div>
             <div className={ACTION}>
               <label htmlFor="keyboardLayoutUpload" className={UPLOAD}>
@@ -231,17 +232,9 @@ export function SettingsMenu() {
                 className="hidden"
                 onChange={handleKeyboardUpload}
               />
-              <select
-                value={config.hw}
-                onChange={(e) => setPref("hw", e.target.value as HardwareId)}
-                className={SELECT}
-              >
-                {Object.entries(HARDWARE).map(([id, hw]) => (
-                  <option key={id} value={id} className={OPTION}>
-                    {hw.name}
-                  </option>
-                ))}
-              </select>
+              <button onClick={openBoardModal} className={`${SELECT} flex items-center gap-2`}>
+                {HARDWARE[config.hw]?.name ?? config.hw}
+              </button>
             </div>
           </div>
           <div className={ROW}>

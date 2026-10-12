@@ -35,6 +35,8 @@ export interface BoardLayout {
   name: string;
   geo: KeyGeo[];
   pos: string[];
+  /** Where the board came from: a loaded layout file, or the bundled keyboard library. */
+  origin: "file" | "library";
 }
 
 export interface LanguageDef {
@@ -150,6 +152,7 @@ export interface UiState {
   setupOpen: boolean;
   textModalOpen: boolean;
   themeModalOpen: boolean;
+  boardModalOpen: boolean;
   toast: { msg: string; error: boolean; visible: boolean };
   newsLoading: boolean;
   debugText: string;

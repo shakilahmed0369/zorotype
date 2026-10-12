@@ -104,12 +104,14 @@ One-time repo setting: **Settings → Pages → Build and deployment → Source:
 
 ---
 
-### 📁 Custom ZMK Layout Setup
+### ⌨️ Keyboard Library & Custom Layouts
 
-Two imports, both straight from the settings menu:
+The Hardware row ships a **library of 86 keyboards** — Lily58, Sofle, Kyria, Iris, ErgoDox, Corne, Aurora variants, Planck, Preonic and more — so most users just pick their board and start typing. Anything else is one file away:
 
-- **Hardware → load file** — a keyboard layout definition (QMK `info.json` / Keymap Editor keyboard json). This is what gives any board its real shape, so hand-wired splits such as a Lily58 work without shipping a built-in definition.
-- **Source / Target Layout → load file** — either a Keymap Editor style `.json` export or your raw `.keymap` / `.dtsi` source.
+- **Hardware → load file** — a keyboard layout definition (QMK `info.json` / Keymap Editor keyboard json). Hand-wired boards work this way.
+- **Source / Target Layout → load file** — a Keymap Editor style `.json` export, or your raw `.keymap` / `.dtsi` source.
+
+A board with no imported keymap starts from a **derived standard QWERTY** — a number row plus QWERTY / ASDF / ZXCV rows and Space on a thumb, worked out from the key geometry — so the on-screen keyboard is useful immediately. Importing your `.keymap` (or dragging keys) replaces it.
 
 Zorotype's built-in LayerForge AST Engine will:
 - Deep-parse ZMK behaviors (`&kp`, `&mt`, `&lt`, inline macros, `&trans`) and strip modifiers to find the base character  
@@ -117,7 +119,7 @@ Zorotype's built-in LayerForge AST Engine will:
 - Turn layer, bluetooth and reset keys into inert labels so they never pollute your stats  
 - Allow you to drag-and-drop keys manually to tweak your matrix on the fly  
 
-No manual coding or manual mapping required.
+No manual coding or manual mapping required. The bundled library data comes from [keymap-editor-contrib](https://github.com/nickcoutsos/keymap-editor-contrib) (ISC) and is regenerated with `npm run boards:update`.
 
 ---
 

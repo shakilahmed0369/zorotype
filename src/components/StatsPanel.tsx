@@ -1,6 +1,6 @@
 import { useEngine } from "@/hooks/useEngine";
 import { getFingerName } from "@/lib/keyboard";
-import type { FingerHit, PracticeResult } from "@/lib/types";
+import type { FingerHit, HardwareId, PracticeResult } from "@/lib/types";
 import { Sparkline } from "./Sparkline";
 
 const FINGER_ORDER = [
@@ -16,10 +16,10 @@ const FINGER_ORDER = [
   "R pinky",
 ];
 
-function FingerStats({ fingerHits }: { fingerHits: Record<string, FingerHit> }) {
+function FingerStats({ fingerHits, hw }: { fingerHits: Record<string, FingerHit>; hw: HardwareId }) {
   const fingers: Record<string, { correct: number; total: number }> = {};
   Object.keys(fingerHits).forEach((pos) => {
-    const name = getFingerName(pos);
+    const name = getFingerName(pos, hw);
     if (!fingers[name]) fingers[name] = { correct: 0, total: 0 };
     fingers[name].correct += fingerHits[pos].correct;
     fingers[name].total += fingerHits[pos].total;
@@ -77,7 +77,7 @@ function PracticeImprovement({ results }: { results: PracticeResult[] }) {
 }
 
 export function StatsPanel() {
-  const { game, ui } = useEngine();
+  const { config, game, ui } = useEngine();
   if (!ui.result || !game.testCompleted || ui.setupOpen) return null;
   const result = ui.result;
   const mistakeChars = Object.keys(game.mistakeChars).sort((a, b) => game.mistakeChars[b] - game.mistakeChars[a]);
@@ -129,7 +129,7 @@ export function StatsPanel() {
           </div>
         </div>
 
-        <FingerStats fingerHits={game.fingerHits} />
+        <FingerStats fingerHits={game.fingerHits} hw={config.hw} />
 
         <div className="flex flex-col gap-[10px] mt-[5px]">
           <div className="flex flex-wrap gap-2 items-center">

@@ -244,5 +244,5 @@ export function parseKeyboardLayout(jsonText: string): BoardLayout {
     .replace(/^-+|-+$/g, "");
   const name = String(data.name || data.keyboard_name || data.id || "Custom keyboard");
 
-  return { id: id || "custom", name, geo, pos };
+  return { id: id || "custom", name, geo, pos, origin: "file" };
 }

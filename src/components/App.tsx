@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { handleKeyDown, handleKeyUp, init } from "@/lib/engine";
+import { BoardModal } from "./BoardModal";
 import { CustomTextModal } from "./CustomTextModal";
 import { Header } from "./Header";
 import { SettingsMenu } from "./SettingsMenu";
@@ -46,6 +47,7 @@ export default function App() {
       <TypingArea />
       {ui.textModalOpen && <CustomTextModal />}
       {ui.themeModalOpen && <ThemeModal />}
+      {ui.boardModalOpen && <BoardModal />}
     </>
   );
 }

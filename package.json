@@ -8,6 +8,7 @@
     "build:pages": "cross-env NEXT_PUBLIC_BASE_PATH=/zorotype next build",
     "preview": "serve out",
     "themes:update": "node scripts/update-themes.mjs",
+    "boards:update": "node scripts/update-boards.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint"

@@ -1,4 +1,6 @@
 import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./dictionary";
+import { BOARD_CATALOG } from "./board-catalog";
+import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { registerCustomBoard, HARDWARE } from "./hardware";
 import { isCharCorrect, isInputBlocked } from "./input-rules";
 import { buildMap, buildScriptLayouts, currentTargetMap, getMirroredMap, mirrorPos } from "./keyboard";
@@ -78,6 +80,7 @@ const ui: UiState = {
   setupOpen: false,
   textModalOpen: false,
   themeModalOpen: false,
+  boardModalOpen: false,
   toast: { msg: "Notification", error: false, visible: false },
   newsLoading: false,
   debugText: "debug info: ready...",
@@ -126,7 +129,7 @@ export async function init(): Promise<void> {
   buildScriptLayouts(); // derive the hebrew/arabic target layouts for every board
 
   Object.assign(config, loadStoredConfig());
-  if (config.customBoard) registerCustomBoard(config.customBoard);
+  if (config.customBoard) registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard));
   if (!LANGUAGES[config.lang]) config.lang = "en";
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
@@ -238,6 +241,16 @@ export function closeThemeModal(): void {
   notify();
 }
 
+export function openBoardModal(): void {
+  ui.boardModalOpen = true;
+  notify();
+}
+
+export function closeBoardModal(): void {
+  ui.boardModalOpen = false;
+  notify();
+}
+
 export function applyCustomText(text: string): void {
   if (text) {
     config.mode = "custom";
@@ -261,7 +274,7 @@ export function applyKeyboardLayout(fileText: string): void {
     return;
   }
 
-  const registeredId = registerCustomBoard(parsed);
+  const registeredId = registerCustomBoard(parsed, defaultLayoutsFor(parsed));
   config.customBoard = { ...parsed, id: registeredId };
   config.hw = registeredId;
   reapplyStoredKeymaps();
@@ -269,6 +282,40 @@ export function applyKeyboardLayout(fileText: string): void {
   refreshMaps();
   notify();
   showToast(`${parsed.name} loaded — ${parsed.pos.length} keys`);
+}
+
+// Board selection from the Hardware row: built-ins switch directly, library entries resolve
+// their geometry on demand (and persist, so later visits don't need the library chunk).
+export async function setHardware(id: string): Promise<void> {
+  if (config.customBoard && config.customBoard.id === id) {
+    setPref("hw", id as HardwareId);
+    return;
+  }
+
+  if (HARDWARE[id]) {
+    setPref("hw", id as HardwareId);
+    return;
+  }
+
+  const entry = BOARD_CATALOG.find((candidate) => candidate.id === id);
+  if (!entry) {
+    setPref("hw", id as HardwareId);
+    return;
+  }
+
+  const board = await libraryBoardLayout(entry.id, entry.name);
+  if (!board) {
+    showToast(`Could not load ${entry.name}.`, true);
+    return;
+  }
+
+  const registeredId = registerCustomBoard(board, defaultLayoutsFor(board));
+  config.customBoard = { ...board, id: registeredId };
+  config.hw = registeredId;
+  reapplyStoredKeymaps();
+  persistConfig(config);
+  refreshMaps();
+  notify();
 }
 
 // Imported keymaps are stored as text and re-parsed for whatever board is active, so the
@@ -736,7 +783,7 @@ function flashKey(pos: string | undefined, kind: "active" | "active-error" = "ac
 }
 
 export function handleKeyDown(e: KeyboardEvent): void {
-  if (ui.textModalOpen || ui.themeModalOpen || e.repeat) return;
+  if (ui.textModalOpen || ui.themeModalOpen || ui.boardModalOpen || e.repeat) return;
 
   // 1. Settings Exit Interception
   if (ui.setupOpen) {

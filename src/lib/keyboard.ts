@@ -21,7 +21,13 @@ export function isHomerow(hw: HardwareId, pos: string): boolean {
   if (hw === "go60") return ["LH_C5R3", "LH_C4R3", "LH_C3R3", "LH_C2R3", "RH_C2R3", "RH_C3R3", "RH_C4R3", "RH_C5R3"].includes(pos);
   if (hw === "corne" || hw === "voyager")
     return ["L_C1R1", "L_C2R1", "L_C3R1", "L_C4R1", "R_C1R1", "R_C2R1", "R_C3R1", "R_C4R1"].includes(pos);
-  // Imported boards: the second row is the resting row.
+  // Imported / library boards: the resting row is the one that got the homerow letters, and
+  // R1 is the fallback when the board has no derived letters.
+  const index = HARDWARE[hw]?.pos.indexOf(pos) ?? -1;
+  if (index >= 0) {
+    const derived = HARDWARE[hw].layouts["qwerty"]?.[index];
+    if (derived) return ["A", "S", "D", "F", "G", "H", "J", "K", "L"].includes(derived);
+  }
   return /^R1C/.test(pos);
 }
 
@@ -75,7 +81,7 @@ export function getMirroredMap(map: Record<string, string>): Record<string, stri
   return mirrored;
 }
 
-export function getFingerName(pos: string): string {
+export function getFingerName(pos: string, hw?: HardwareId): string {
   if (pos.includes("T") || pos === "K43" || pos === "K44" || pos === "Space") {
     return pos.includes("L") ? "L thumb" : "R thumb";
   }
@@ -111,14 +117,16 @@ export function getFingerName(pos: string): string {
       return "R index";
     }
   }
-  // Imported boards name positions R<row>C<col>: derive the finger from the column, and
-  // treat rows past the home rows (row 4) as thumbs.
+  // Imported boards name positions R<row>C<col>: derive the finger from the column, and mark
+  // the thumb key(s) from the board's derived starting layout when there is one.
   const grid = pos.match(/^R(\d+)C(\d+)$/);
   if (grid) {
     const row = parseInt(grid[1]);
     const col = parseInt(grid[2]);
     const hand = col <= 5 ? "L" : "R";
-    if (row >= 4) return hand + " thumb";
+    const index = hw ? (HARDWARE[hw]?.pos.indexOf(pos) ?? -1) : -1;
+    const derived = index >= 0 && hw ? HARDWARE[hw].layouts["qwerty"]?.[index] : undefined;
+    if (derived === "Space" || row >= 4) return hand + " thumb";
     const withinHalf = col <= 5 ? col : 11 - col;
     if (withinHalf <= 1) return hand + " pinky";
     if (withinHalf === 2) return hand + " ring";

@@ -80,7 +80,7 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
 
   const fingerAccuracy: Record<string, { correct: number; total: number }> = {};
   Object.keys(fingerHits).forEach((p) => {
-    const name = getFingerName(p);
+    const name = getFingerName(p, hw);
     if (!fingerAccuracy[name]) fingerAccuracy[name] = { correct: 0, total: 0 };
     fingerAccuracy[name].correct += fingerHits[p].correct;
     fingerAccuracy[name].total += fingerHits[p].total;
@@ -90,7 +90,7 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
     const d = fingerAccuracy[finger];
     if (d.total > 0 && d.correct / d.total < 0.9) {
       HARDWARE[hw].pos.forEach((p) => {
-        if (getFingerName(p) === finger) {
+        if (getFingerName(p, hw) === finger) {
           const label = workingMap[p];
           if (label && label.length === 1 && label.match(/[a-z\u05D0-\u05EA\u0621-\u064A]/i)) {
             charWeights[label.toLowerCase()] =

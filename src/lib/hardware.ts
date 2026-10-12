@@ -4,11 +4,11 @@ import type { BoardLayout, HardwareDef } from "./types";
 // so every consumer (rendering, mapping, finger stats) works without special cases.
 const customBoardIds = new Set<string>();
 
-export function registerCustomBoard(board: BoardLayout): string {
+export function registerCustomBoard(board: BoardLayout, layouts: Record<string, string[]> = {}): string {
   let id = board.id;
   // Never shadow a built-in board, and keep re-registering the same import idempotent.
   if (HARDWARE[id] && !customBoardIds.has(id)) id = `${id}-custom`;
-  HARDWARE[id] = { name: board.name, geo: board.geo, pos: board.pos, layouts: {} };
+  HARDWARE[id] = { name: board.name, geo: board.geo, pos: board.pos, layouts };
   customBoardIds.add(id);
   return id;
 }
