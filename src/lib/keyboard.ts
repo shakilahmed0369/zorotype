@@ -1,0 +1,195 @@
+import { HARDWARE } from "./hardware";
+import { LANGUAGES, SCRIPT_MAPS } from "./languages";
+import type { Config, HardwareId, KeyGeo } from "./types";
+
+// Derive script-based target layouts (hebrew, arabic) for every board from its qwerty layout,
+// so pressing a physical key produces the correct letter (blind typing of that script).
+export function buildScriptLayouts(): void {
+  (Object.keys(HARDWARE) as HardwareId[]).forEach((hw) => {
+    const q = HARDWARE[hw].layouts["qwerty"];
+    if (!q) return;
+    Object.keys(SCRIPT_MAPS).forEach((script) => {
+      const map = SCRIPT_MAPS[script];
+      HARDWARE[hw].layouts[script] = q.map((k) => (map[k] !== undefined ? map[k] : k));
+    });
+  });
+}
+
+export function isHomerow(hw: HardwareId, pos: string): boolean {
+  if (hw === "ansi60") return ["K21", "K22", "K23", "K24", "K27", "K28", "K29", "K2A"].includes(pos);
+  if (hw === "glove80") return ["LH_C5R4", "LH_C4R4", "LH_C3R4", "LH_C2R4", "RH_C2R4", "RH_C3R4", "RH_C4R4", "RH_C5R4"].includes(pos);
+  if (hw === "go60") return ["LH_C5R3", "LH_C4R3", "LH_C3R3", "LH_C2R3", "RH_C2R3", "RH_C3R3", "RH_C4R3", "RH_C5R3"].includes(pos);
+  if (hw === "corne" || hw === "voyager")
+    return ["L_C1R1", "L_C2R1", "L_C3R1", "L_C4R1", "R_C1R1", "R_C2R1", "R_C3R1", "R_C4R1"].includes(pos);
+  return false;
+}
+
+export function buildMap(
+  hw: HardwareId,
+  layoutName: string,
+  type: "source" | "target",
+  config: Config
+): Record<string, string> {
+  if (type === "target" && layoutName === "default") {
+    layoutName = config.sourceKey;
+    if (layoutName === "custom_json") return config.sourceJsonMap || {};
+  }
+
+  if (layoutName === "custom_json") return type === "source" ? config.sourceJsonMap || {} : config.targetJsonMap || {};
+  if (layoutName === "custom_dragged" && type === "target") return config.draggedMap || {};
+
+  const map: Record<string, string> = {};
+  const posArray = HARDWARE[hw].pos;
+  const layoutArray = HARDWARE[hw].layouts[layoutName] || HARDWARE[hw].layouts["qwerty"];
+  posArray.forEach((p, i) => {
+    map[p] = layoutArray[i];
+  });
+  return map;
+}
+
+// The effective target map. Non-Latin languages (Hebrew, Arabic) force their generated
+// script layout, unless the user has an explicit custom target (uploaded JSON or dragged tweak).
+export function currentTargetMap(config: Config): Record<string, string> {
+  const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
+  if ((script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json") {
+    return buildMap(config.hw, script, "target", config);
+  }
+  return buildMap(config.hw, config.tgt, "target", config);
+}
+
+export function mirrorPos(pos: string): string {
+  if (pos.startsWith("LH_")) return pos.replace("LH_", "RH_");
+  if (pos.startsWith("RH_")) return pos.replace("RH_", "LH_");
+  if (pos.startsWith("L_")) return pos.replace("L_", "R_");
+  if (pos.startsWith("R_")) return pos.replace("R_", "L_");
+  return pos;
+}
+
+export function getMirroredMap(map: Record<string, string>): Record<string, string> {
+  const mirrored: Record<string, string> = {};
+  Object.keys(map).forEach((pos) => {
+    const mirror = mirrorPos(pos);
+    mirrored[map[mirror] !== undefined ? mirror : pos] = map[pos];
+  });
+  return mirrored;
+}
+
+export function getFingerName(pos: string): string {
+  if (pos.includes("T") || pos === "K43" || pos === "K44" || pos === "Space") {
+    return pos.includes("L") ? "L thumb" : "R thumb";
+  }
+  const isLeft = pos.includes("L") || (pos.startsWith("K") && parseInt(pos.charAt(2), 16) < 6);
+  const hand = isLeft ? "L" : "R";
+  const colMatch = pos.match(/C(\d)/);
+  if (colMatch) {
+    const col = parseInt(colMatch[1]);
+    if (pos.startsWith("LH_") || pos.startsWith("RH_")) {
+      if (col <= 2) return hand + " pinky";
+      if (col === 3) return hand + " ring";
+      if (col === 4) return hand + " mid";
+      return hand + " index";
+    }
+    if (pos.startsWith("L_") || pos.startsWith("R_")) {
+      if (col <= 1) return hand + " pinky";
+      if (col === 2) return hand + " ring";
+      if (col === 3) return hand + " mid";
+      return hand + " index";
+    }
+  }
+  if (pos.startsWith("K")) {
+    const c = parseInt(pos.charAt(2), 16);
+    if (isLeft) {
+      if (c <= 1) return "L pinky";
+      if (c === 2) return "L ring";
+      if (c === 3) return "L mid";
+      return "L index";
+    } else {
+      if (c >= 11) return "R pinky";
+      if (c === 10) return "R ring";
+      if (c === 9) return "R mid";
+      return "R index";
+    }
+  }
+  return "other";
+}
+
+export interface KeyRect {
+  pos: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  transform: string;
+}
+
+export interface KeyboardLayout {
+  keys: KeyRect[];
+  viewBox: string;
+  maxWidth: number;
+}
+
+const UNIT = 56;
+const PAD = 12;
+const KEY_INSET = 6;
+
+export function buildKeyRects(hw: HardwareId): KeyboardLayout {
+  const geo = HARDWARE[hw].geo;
+  const posArray = HARDWARE[hw].pos;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  const updateBounds = (px: number, py: number, cx: number, cy: number, angle: number) => {
+    if (!angle) {
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py);
+      maxY = Math.max(maxY, py);
+      return;
+    }
+    const rad = angle * (Math.PI / 180);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const nx = cos * (px - cx) - sin * (py - cy) + cx;
+    const ny = sin * (px - cx) + cos * (py - cy) + cy;
+    minX = Math.min(minX, nx);
+    maxX = Math.max(maxX, nx);
+    minY = Math.min(minY, ny);
+    maxY = Math.max(maxY, ny);
+  };
+
+  const keys = geo.map((k: KeyGeo, i: number) => {
+    const pos = posArray[i];
+    const x = (k.x || 0) * UNIT;
+    const y = (k.y || 0) * UNIT;
+    const w = (k.w || 1) * UNIT - KEY_INSET;
+    const h = (k.h || 1) * UNIT - KEY_INSET;
+
+    let cx = x;
+    let cy = y;
+    let angle = 0;
+    let transform = `translate(${x}, ${y})`;
+    if (k.r) {
+      cx = (k.rx !== undefined ? k.rx : k.x) * UNIT;
+      cy = (k.ry !== undefined ? k.ry : k.y) * UNIT;
+      angle = k.r;
+      transform = `rotate(${k.r}, ${cx}, ${cy}) translate(${x}, ${y})`;
+    }
+
+    updateBounds(x, y, cx, cy, angle);
+    updateBounds(x + w, y, cx, cy, angle);
+    updateBounds(x, y + h, cx, cy, angle);
+    updateBounds(x + w, y + h, cx, cy, angle);
+
+    return { pos, x, y, w, h, transform };
+  });
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return {
+    keys,
+    viewBox: `${minX - PAD} ${minY - PAD} ${width + PAD * 2} ${height + PAD * 2}`,
+    maxWidth: width + PAD * 2,
+  };
+}
