@@ -130,11 +130,28 @@ export function Header() {
         </div>
 
         <button
-          className="bg-transparent border-none text-muted text-[1.2rem] cursor-pointer transition-all duration-300 outline-none p-[5px] hover:text-accent hover:rotate-90"
+          className="bg-transparent border-none text-muted cursor-pointer transition-all duration-300 outline-none p-[5px] flex items-center hover:text-accent hover:rotate-90"
           onClick={toggleSettings}
           title="Settings"
+          aria-label="Settings"
         >
-          ⚙️
+          <svg viewBox="0 0 24 24" className="w-5 h-5 block" fill="currentColor" aria-hidden="true">
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+              <rect
+                key={angle}
+                x="10.7"
+                y="3.2"
+                width="2.6"
+                height="3.6"
+                rx="0.7"
+                transform={`rotate(${angle} 12 12)`}
+              />
+            ))}
+            <path
+              fillRule="evenodd"
+              d="M12 6.2a5.8 5.8 0 1 0 0 11.6 5.8 5.8 0 0 0 0-11.6zm0 3.4a2.4 2.4 0 1 1 0 4.8 2.4 2.4 0 0 1 0-4.8z"
+            />
+          </svg>
         </button>
       </div>
     </header>
