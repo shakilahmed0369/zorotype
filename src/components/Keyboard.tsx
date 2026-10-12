@@ -3,6 +3,7 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { swapKeys } from "@/lib/engine";
 import { buildKeyRects, getMirroredMap, isHomerow } from "@/lib/keyboard";
+import { shortKeyLabel } from "@/lib/key-labels";
 import { getTheme, hexToRgb } from "@/lib/themes";
 
 const BRAILLE_BLANK = "\u2800";
@@ -61,7 +62,7 @@ export function Keyboard() {
     const label = workingMap[pos];
     if (!label || label === BRAILLE_BLANK || label === "ø") return;
     dragPosRef.current = pos;
-    setGhost({ label: label.toUpperCase() === "SPACE" ? "Space" : label, x: e.clientX, y: e.clientY });
+    setGhost({ label: shortKeyLabel(label), x: e.clientX, y: e.clientY });
   };
 
   return (
@@ -80,7 +81,7 @@ export function Keyboard() {
             const label = workingMap[k.pos];
             const isHidden = label === BRAILLE_BLANK || label === "ø";
             const isBlank = label === "NONE" || label === "TRANS" || label === "TRNS" || isHidden;
-            const displayLabel = label === "SPACE" || label === " " ? "Space" : isBlank ? "" : (label ?? "");
+            const displayLabel = isBlank ? "" : shortKeyLabel(label === " " ? "Space" : (label ?? ""));
             const flash = ui.keyFlash && ui.keyFlash.pos === k.pos ? ui.keyFlash.kind : null;
             const isExpected = !!expectedPos && k.pos === expectedPos;
             const homerow = config.homerow && isHomerow(config.hw, k.pos);
