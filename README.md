@@ -44,7 +44,7 @@ Instead of making you guess where your keys are, it shows a live, interactive ma
 * **Algorithmic Mistake Tracking:** Automatically generate targeted practice sessions to isolate and fix your weakest keys.
 * **Open Source & Local:** Free, transparent, and private. Everything runs in your browser with zero backend — settings and history stay in `localStorage`.
 * **Multi-Language:** An input-language selector (English, Spanish, French, Italian, Portuguese, Hebrew, Arabic) teaches blind typing in each language, with words sourced from Monkeytype. Hebrew and Arabic switch the on-screen keyboard to their standard script layout (SI-1452 / Arabic 101) and render right-to-left; the Latin languages keep your chosen layout so you can drill it with foreign-language text.
-* **Every Monkeytype Theme:** All 187 Monkeytype color palettes are bundled and selectable from a searchable picker in the settings — applied instantly, remembered between sessions. The default (`serika_dark`) is Monkeytype's own default, so the stock look is unchanged.
+* **Every Monkeytype Theme:** All 187 Monkeytype color palettes are bundled and selectable from a searchable picker in the settings — applied instantly, remembered between sessions. The default is Monkeytype's `github` palette (green on slate).
 
 ---
 

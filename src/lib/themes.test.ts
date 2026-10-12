@@ -36,15 +36,15 @@ describe("theme data", () => {
 describe("themeVars", () => {
   it("maps the default theme onto the app tokens", () => {
     const vars = themeVars(getTheme(DEFAULT_THEME));
-    expect(vars["--color-bg"]).toBe("#323437");
-    expect(vars["--color-accent"]).toBe("#e2b714");
-    expect(vars["--color-caret"]).toBe("#e2b714");
-    expect(vars["--color-muted"]).toBe("#646669");
-    expect(vars["--color-key"]).toBe("#2c2e31");
-    expect(vars["--color-keytext"]).toBe("#d1d0c5");
-    expect(vars["--color-correct"]).toBe("#d1d0c5");
-    expect(vars["--color-error"]).toBe("#ca4754");
-    expect(vars["--color-edge"]).toBe("rgb(30, 31, 33)");
+    expect(vars["--color-bg"]).toBe("#212830");
+    expect(vars["--color-accent"]).toBe("#41ce5c");
+    expect(vars["--color-caret"]).toBe("#41ce5c");
+    expect(vars["--color-muted"]).toBe("#788386");
+    expect(vars["--color-key"]).toBe("#141b23");
+    expect(vars["--color-keytext"]).toBe("#ccdae6");
+    expect(vars["--color-correct"]).toBe("#ccdae6");
+    expect(vars["--color-error"]).toBe("#c23e3a");
+    expect(vars["--color-edge"]).toBe("rgb(14, 18, 24)");
     expect(vars["--color-homerow"]).toBe("rgba(255, 255, 255, 0.05)");
     expect(vars["--color-expected"]).toBe("#f8fafc");
   });

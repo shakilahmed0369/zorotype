@@ -1,7 +1,7 @@
 import { THEME_DATA } from "./theme-data";
 import type { ThemeData } from "./theme-data";
 
-export const DEFAULT_THEME = "serika_dark";
+export const DEFAULT_THEME = "github";
 
 export const THEME_CACHE_KEY = "zorotype_theme_cache";
 
