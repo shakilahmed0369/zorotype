@@ -1,16 +1,14 @@
 export function LogoIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-      <line x1="120" y1="100" x2="120" y2="400" stroke="currentColor" strokeWidth="40" strokeLinecap="round" />
-      <line x1="120" y1="400" x2="400" y2="400" stroke="currentColor" strokeWidth="40" strokeLinecap="round" />
-      <polyline
-        points="160,340 220,300 270,340 320,240 360,280 420,200"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="40"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <g fill="none" stroke="currentColor" strokeWidth="46" strokeLinecap="round">
+        {/* Z mark: the top and bottom bars are split down the middle, a nod to split keyboards */}
+        <path d="M106 154h118" />
+        <path d="M288 154h118" />
+        <path d="M406 154 106 358" />
+        <path d="M106 358h118" />
+        <path d="M288 358h118" />
+      </g>
     </svg>
   );
 }

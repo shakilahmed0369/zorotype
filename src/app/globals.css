@@ -17,20 +17,9 @@
   --font-brand: var(--font-lexend-deca), sans-serif;
   --font-key: var(--font-poppins), sans-serif;
 
-  --animate-pulse-soft: pulseSoft 2s infinite;
   --animate-caret: caretBlink 1s infinite;
   --animate-slide-down: slideDown 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fadeIn 0.3s ease;
-
-  @keyframes pulseSoft {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
-  }
 
   @keyframes caretBlink {
     0%,

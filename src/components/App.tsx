@@ -6,7 +6,6 @@ import { handleKeyDown, handleKeyUp, init } from "@/lib/engine";
 import { CustomTextModal } from "./CustomTextModal";
 import { Header } from "./Header";
 import { SettingsMenu } from "./SettingsMenu";
-import { StartOverlay } from "./StartOverlay";
 import { TabRestartOverlay } from "./TabRestartOverlay";
 import { ThemeModal } from "./ThemeModal";
 import { Toast } from "./Toast";
@@ -41,7 +40,6 @@ export default function App() {
   return (
     <>
       <Toast />
-      <StartOverlay />
       <TabRestartOverlay />
       <Header />
       {ui.setupOpen && <SettingsMenu />}

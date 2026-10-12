@@ -30,6 +30,13 @@ export const metadata: Metadata = {
   title: "zorotype | Practice with your split keyboard",
   description: "A typing test for Matrix layouts",
   manifest: `${basePath}/manifest.json`,
+  icons: {
+    icon: [
+      { url: `${basePath}/icon.svg`, type: "image/svg+xml" },
+      { url: `${basePath}/icon-192.png`, sizes: "192x192", type: "image/png" },
+    ],
+    apple: `${basePath}/icon-192.png`,
+  },
 };
 
 export const viewport: Viewport = {
@@ -45,10 +52,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${lexendDeca.variable} ${poppins.variable} ${robotoMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-bg text-accent font-body flex flex-col items-center px-5 min-h-screen overflow-x-hidden select-none">
-        {/* Applies the cached theme's CSS variables to <html> before first paint to avoid a
-            theme flash; that intentional attribute difference is why <html> is marked
-            suppressHydrationWarning above. */}
+      {/* Both suppressions cover attributes that legitimately differ before hydration:
+          <html> gets its style attribute from the theme bootstrap script below, and <body>
+          gets stamped by browser extensions (Grammarly adds data-gr-ext-installed and
+          data-new-gr-c-s-check-loaded), which React would otherwise report as a mismatch. */}
+      <body
+        className="bg-bg text-accent font-body flex flex-col items-center px-5 min-h-screen overflow-x-hidden select-none"
+        suppressHydrationWarning
+      >
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         {children}
       </body>

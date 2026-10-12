@@ -133,7 +133,6 @@ export interface HistorySummary {
 
 export interface UiState {
   ready: boolean;
-  overlay: "visible" | "fading" | "hidden";
   setupOpen: boolean;
   textModalOpen: boolean;
   themeModalOpen: boolean;

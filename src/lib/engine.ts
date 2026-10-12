@@ -74,7 +74,6 @@ const game: GameState = {
 
 const ui: UiState = {
   ready: false,
-  overlay: "visible",
   setupOpen: false,
   textModalOpen: false,
   themeModalOpen: false,
@@ -104,7 +103,6 @@ export function getUiState(): UiState {
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 let snapshotInterval: ReturnType<typeof setInterval> | null = null;
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
-let overlayTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /* ==========================================================================
    INITIALIZATION
@@ -123,8 +121,6 @@ export async function init(): Promise<void> {
     localStorage.clear();
     localStorage.setItem(VER_KEY, APP_VERSION);
   }
-
-  if (isReturningUser) ui.overlay = "hidden";
 
   buildScriptLayouts(); // derive the hebrew/arabic target layouts for every board
 
@@ -186,18 +182,6 @@ export function clearAllData(): void {
 /* ==========================================================================
    UI ACTIONS
    ========================================================================== */
-
-export function startApp(): void {
-  if (ui.overlay === "hidden") return;
-  ui.overlay = "fading";
-  window.focus();
-  notify();
-  if (overlayTimeout) clearTimeout(overlayTimeout);
-  overlayTimeout = setTimeout(() => {
-    ui.overlay = "hidden";
-    notify();
-  }, 200);
-}
 
 export function showToast(msg: string, isError = false): void {
   ui.toast = { msg, error: isError, visible: true };
