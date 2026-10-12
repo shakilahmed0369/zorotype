@@ -9,7 +9,6 @@ import {
   toggleSettings,
 } from "@/lib/engine";
 import { langHasPhrases } from "@/lib/languages";
-import { LogoIcon } from "./LogoIcon";
 
 const CARD = "flex items-center gap-[2px] bg-key px-2 py-[4px] rounded-lg";
 const BTN =
@@ -32,15 +31,12 @@ export function Header() {
   return (
     <header className="w-full max-w-[1050px] flex flex-wrap justify-between items-center gap-[15px] py-[25px] mb-5 shrink-0 transition-all duration-300">
       <div
-        className={`flex items-center gap-3 text-[2.2rem] font-brand font-normal tracking-[-1px] cursor-pointer transition-colors duration-300 leading-none ${
+        className={`text-[2.2rem] font-brand font-normal tracking-[-1px] cursor-pointer transition-colors duration-300 leading-none ${
           typingFocus ? "text-muted" : "text-correct hover:text-accent"
         }`}
         onClick={handleLogoClick}
         title="Home / Exit Settings"
       >
-        <LogoIcon
-          className={`w-9 h-9 block transition-colors duration-300 ${typingFocus ? "text-muted" : "text-accent"}`}
-        />
         zorotype
       </div>
 
