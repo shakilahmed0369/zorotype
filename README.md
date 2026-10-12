@@ -104,12 +104,17 @@ One-time repo setting: **Settings → Pages → Build and deployment → Source:
 
 ---
 
-### 📁 Custom ZMK / MoErgo JSON Setup
+### 📁 Custom ZMK Layout Setup
 
-Upload your layout's `.json` file directly into the settings menu. Zorotype's built-in LayerForge AST Engine will:
-- Deep-parse ZMK behaviors (like `&mt`, `&lt`, and nested macros)  
-- Strip modifiers to find the base character  
-- Instantly map your actual OS output to your visual target layout  
+Two imports, both straight from the settings menu:
+
+- **Hardware → load file** — a keyboard layout definition (QMK `info.json` / Keymap Editor keyboard json). This is what gives any board its real shape, so hand-wired splits such as a Lily58 work without shipping a built-in definition.
+- **Source / Target Layout → load file** — either a Keymap Editor style `.json` export or your raw `.keymap` / `.dtsi` source.
+
+Zorotype's built-in LayerForge AST Engine will:
+- Deep-parse ZMK behaviors (`&kp`, `&mt`, `&lt`, inline macros, `&trans`) and strip modifiers to find the base character  
+- Read the first layer of a `.keymap`, skip combos and macro definitions, and line the bindings up with the board you loaded  
+- Turn layer, bluetooth and reset keys into inert labels so they never pollute your stats  
 - Allow you to drag-and-drop keys manually to tweak your matrix on the fly  
 
 No manual coding or manual mapping required.

@@ -153,7 +153,9 @@ export function Keyboard() {
 
       {!statsActive && (
         <div className="text-xs text-muted transition-opacity duration-300 opacity-60 mt-[15px]">
-          Drag keys to tweak target layout • Tab+Enter to restart
+          {Object.values(workingMap).some((value) => value)
+            ? "Drag keys to tweak target layout • Tab+Enter to restart"
+            : "No letters for this board — import your .keymap (Settings → Matrix & Layout) or pick a built-in board"}
         </div>
       )}
 

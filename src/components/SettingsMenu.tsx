@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import { useEngine } from "@/hooks/useEngine";
-import { applyZmkJson, clearAllData, openThemeModal, setLang, setPref } from "@/lib/engine";
+import { applyKeyboardLayout, applyLayoutFile, clearAllData, openThemeModal, setLang, setPref } from "@/lib/engine";
 import { HARDWARE } from "@/lib/hardware";
 import { LANGUAGES } from "@/lib/languages";
 import { getTheme, listThemes } from "@/lib/themes";
@@ -58,11 +58,20 @@ export function SettingsMenu() {
   const best = [...ui.bestScores].sort((a, b) => b.wpm - a.wpm).slice(0, 5);
   const theme = getTheme(config.theme);
 
-  const handleJsonUpload = (e: ChangeEvent<HTMLInputElement>, type: "source" | "target") => {
+  const handleLayoutUpload = (e: ChangeEvent<HTMLInputElement>, type: "source" | "target") => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => applyZmkJson(String(ev.target?.result ?? ""), type);
+    reader.onload = (ev) => applyLayoutFile(String(ev.target?.result ?? ""), type);
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleKeyboardUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => applyKeyboardLayout(String(ev.target?.result ?? ""));
     reader.readAsText(file);
     e.target.value = "";
   };
@@ -209,9 +218,19 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Hardware</span>
-              <span className={LABEL_DESC}>Select your physical keyboard shape</span>
+              <span className={LABEL_DESC}>Select your physical keyboard shape, or load a layout .json</span>
             </div>
             <div className={ACTION}>
+              <label htmlFor="keyboardLayoutUpload" className={UPLOAD}>
+                load file
+              </label>
+              <input
+                type="file"
+                id="keyboardLayoutUpload"
+                accept=".json"
+                className="hidden"
+                onChange={handleKeyboardUpload}
+              />
               <select
                 value={config.hw}
                 onChange={(e) => setPref("hw", e.target.value as HardwareId)}
@@ -228,18 +247,18 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Source Layout (OS)</span>
-              <span className={LABEL_DESC}>The physical layout your computer outputs</span>
+              <span className={LABEL_DESC}>The physical layout your computer outputs — or upload a .json / .keymap</span>
             </div>
             <div className={ACTION}>
               <label htmlFor="sourceJsonUpload" className={UPLOAD}>
-                📁 JSON
+                load file
               </label>
               <input
                 type="file"
                 id="sourceJsonUpload"
-                accept=".json"
+                accept=".json,.keymap,.dtsi,.dts,.overlay"
                 className="hidden"
-                onChange={(e) => handleJsonUpload(e, "source")}
+                onChange={(e) => handleLayoutUpload(e, "source")}
               />
               <select value={config.sourceKey} onChange={(e) => setPref("sourceKey", e.target.value)} className={SELECT}>
                 {LAYOUTS.map((k) => (
@@ -249,7 +268,7 @@ export function SettingsMenu() {
                 ))}
                 {config.sourceJsonMap && (
                   <option value="custom_json" className={OPTION}>
-                    Custom JSON
+                    Imported
                   </option>
                 )}
               </select>
@@ -258,18 +277,18 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Target Layout</span>
-              <span className={LABEL_DESC}>The visual layout you want to test drive</span>
+              <span className={LABEL_DESC}>The visual layout you want to test drive — or upload a .json / .keymap</span>
             </div>
             <div className={ACTION}>
               <label htmlFor="targetJsonUpload" className={UPLOAD}>
-                📁 JSON
+                load file
               </label>
               <input
                 type="file"
                 id="targetJsonUpload"
-                accept=".json"
+                accept=".json,.keymap,.dtsi,.dts,.overlay"
                 className="hidden"
-                onChange={(e) => handleJsonUpload(e, "target")}
+                onChange={(e) => handleLayoutUpload(e, "target")}
               />
               <select value={config.tgt} onChange={(e) => setPref("tgt", e.target.value)} className={SELECT}>
                 <option value="default" className={OPTION}>
@@ -282,7 +301,7 @@ export function SettingsMenu() {
                 ))}
                 {config.targetJsonMap && (
                   <option value="custom_json" className={OPTION}>
-                    Custom JSON
+                    Imported
                   </option>
                 )}
                 {config.draggedMap && (

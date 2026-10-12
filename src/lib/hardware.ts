@@ -1,4 +1,17 @@
-import type { HardwareDef } from "./types";
+import type { BoardLayout, HardwareDef } from "./types";
+
+// Boards imported from a layout definition file live in the same registry as the built-ins,
+// so every consumer (rendering, mapping, finger stats) works without special cases.
+const customBoardIds = new Set<string>();
+
+export function registerCustomBoard(board: BoardLayout): string {
+  let id = board.id;
+  // Never shadow a built-in board, and keep re-registering the same import idempotent.
+  if (HARDWARE[id] && !customBoardIds.has(id)) id = `${id}-custom`;
+  HARDWARE[id] = { name: board.name, geo: board.geo, pos: board.pos, layouts: {} };
+  customBoardIds.add(id);
+  return id;
+}
 
 export const ZMK_EXCEPTIONS: Record<string, string> = {
   "N1": "1",
@@ -33,7 +46,47 @@ export const ZMK_EXCEPTIONS: Record<string, string> = {
   "TILDE": "~",
   "NONE": "NONE",
   "TRNS": "NONE",
-  "TRANS": "NONE"
+  "TRANS": "NONE",
+  "EQL": "=",
+  "SLASH": "/",
+  "BSLASH": "\\",
+  "SEMICOLON": ";",
+  "APOSTROPHE": "'",
+  "PLUS": "+",
+  "EXCL": "!",
+  "EXCLAMATION": "!",
+  "AT": "@",
+  "AT_SIGN": "@",
+  "HASH": "#",
+  "DLLR": "$",
+  "DOLLAR": "$",
+  "PRCNT": "%",
+  "PERCENT": "%",
+  "CARET": "^",
+  "AMPS": "&",
+  "AMPERSAND": "&",
+  "ASTRK": "*",
+  "ASTERISK": "*",
+  "LPAR": "(",
+  "LEFT_PARENTHESIS": "(",
+  "RPAR": ")",
+  "RIGHT_PARENTHESIS": ")",
+  "UNDER": "_",
+  "UNDERSCORE": "_",
+  "LBRC": "{",
+  "LEFT_BRACE": "{",
+  "RBRC": "}",
+  "RIGHT_BRACE": "}",
+  "PIPE": "|",
+  "COLON": ":",
+  "DQT": "\"",
+  "DOUBLE_QUOTES": "\"",
+  "LT": "<",
+  "LESS_THAN": "<",
+  "GT": ">",
+  "GREATER_THAN": ">",
+  "QMARK": "?",
+  "QUESTION": "?"
 };
 
 export const HARDWARE: Record<string, HardwareDef> = {

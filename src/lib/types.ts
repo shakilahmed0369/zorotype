@@ -1,4 +1,5 @@
-export type HardwareId = "ansi60" | "glove80" | "go60" | "corne" | "voyager";
+// Known boards, while still allowing ids registered at runtime from an imported layout file.
+export type HardwareId = "ansi60" | "glove80" | "go60" | "corne" | "voyager" | (string & {});
 
 export type LanguageCode = "en" | "es" | "fr" | "it" | "pt" | "he" | "ar";
 
@@ -27,6 +28,15 @@ export interface HardwareDef {
   layouts: Record<string, string[]>;
 }
 
+// A board description imported at runtime from a layout definition file (QMK info.json /
+// Keymap Editor keyboard json): visual geometry plus the binding order.
+export interface BoardLayout {
+  id: string;
+  name: string;
+  geo: KeyGeo[];
+  pos: string[];
+}
+
 export interface LanguageDef {
   name: string;
   dir: "ltr" | "rtl";
@@ -41,6 +51,7 @@ export interface Config {
   lang: LanguageCode;
   theme: string;
   hw: HardwareId;
+  customBoard: BoardLayout | null;
   sourceKey: string;
   tgt: string;
   wordCount: string;
@@ -61,6 +72,9 @@ export interface Config {
   sourceJsonMap: Record<string, string> | null;
   targetJsonMap: Record<string, string> | null;
   draggedMap: Record<string, string> | null;
+  // Raw imported keymap files, kept so they can be re-parsed when the board changes.
+  sourceKeymapText: string | null;
+  targetKeymapText: string | null;
 }
 
 export interface FingerHit {

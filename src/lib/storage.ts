@@ -10,6 +10,7 @@ export const DEFAULT_CONFIG: Config = {
   lang: "en",
   theme: DEFAULT_THEME,
   hw: "go60",
+  customBoard: null,
   sourceKey: "qwerty",
   tgt: "default",
   wordCount: "25",
@@ -30,6 +31,8 @@ export const DEFAULT_CONFIG: Config = {
   sourceJsonMap: null,
   targetJsonMap: null,
   draggedMap: null,
+  sourceKeymapText: null,
+  targetKeymapText: null,
 };
 
 export function loadConfig(): Config {

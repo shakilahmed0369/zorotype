@@ -1,4 +1,5 @@
 import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./dictionary";
+import { registerCustomBoard, HARDWARE } from "./hardware";
 import { isCharCorrect, isInputBlocked } from "./input-rules";
 import { buildMap, buildScriptLayouts, currentTargetMap, getMirroredMap, mirrorPos } from "./keyboard";
 import { LANGUAGES, langHasPhrases } from "./languages";
@@ -16,9 +17,9 @@ import {
   saveConfig as persistConfig,
   saveResult,
 } from "./storage";
-import { parseZmkJson } from "./zmk";
+import { parseKeyboardLayout, parseZmkLayout } from "./zmk";
 import { applyTheme, getTheme } from "./themes";
-import type { Config, GameState, HardwareId, HistoryEntry, LanguageCode, UiState } from "./types";
+import type { BoardLayout, Config, GameState, HardwareId, HistoryEntry, LanguageCode, UiState } from "./types";
 
 /* ==========================================================================
    STORE (external, framework-agnostic)
@@ -125,6 +126,7 @@ export async function init(): Promise<void> {
   buildScriptLayouts(); // derive the hebrew/arabic target layouts for every board
 
   Object.assign(config, loadStoredConfig());
+  if (config.customBoard) registerCustomBoard(config.customBoard);
   if (!LANGUAGES[config.lang]) config.lang = "en";
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
@@ -160,6 +162,7 @@ export function setPref<K extends keyof Config>(key: K, val: Config[K]): void {
   config[key] = val;
   persistConfig(config);
   if (key === "hw" || key === "tgt" || key === "sourceKey" || key === "mirror" || key === "homerow") {
+    if (key === "hw") reapplyStoredKeymaps();
     refreshMaps();
   }
   // Content modifiers rebuild the current test so the change is visible right away.
@@ -245,16 +248,59 @@ export function applyCustomText(text: string): void {
 }
 
 /* ==========================================================================
-   ZMK JSON (LayerForge AST Engine)
+   KEYBOARD LAYOUT IMPORT (QMK info.json / Keymap Editor keyboard json)
    ========================================================================== */
 
-export function applyZmkJson(jsonString: string, type: "source" | "target"): void {
+export function applyKeyboardLayout(fileText: string): void {
+  let parsed: BoardLayout;
+  try {
+    parsed = parseKeyboardLayout(fileText);
+  } catch (err) {
+    console.error("Keyboard layout parse error:", err);
+    showToast(err instanceof Error && err.message ? err.message : "Could not read that layout file.", true);
+    return;
+  }
+
+  const registeredId = registerCustomBoard(parsed);
+  config.customBoard = { ...parsed, id: registeredId };
+  config.hw = registeredId;
+  reapplyStoredKeymaps();
+  persistConfig(config);
+  refreshMaps();
+  notify();
+  showToast(`${parsed.name} loaded — ${parsed.pos.length} keys`);
+}
+
+// Imported keymaps are stored as text and re-parsed for whatever board is active, so the
+// position ids always line up (a map built for one board means nothing to another).
+function reapplyStoredKeymaps(): boolean {
+  let reapplied = false;
+  (["source", "target"] as const).forEach((type) => {
+    const text = type === "source" ? config.sourceKeymapText : config.targetKeymapText;
+    if (!text) return;
+    try {
+      const parsed = parseZmkLayout(text, config.hw);
+      if (type === "source") config.sourceJsonMap = parsed.map;
+      else config.targetJsonMap = parsed.map;
+      reapplied = true;
+    } catch {
+      /* keep the previous map if the stored text no longer parses */
+    }
+  });
+  return reapplied;
+}
+
+/* ==========================================================================
+   ZMK LAYOUT IMPORT (JSON export or raw .keymap / .dtsi source)
+   ========================================================================== */
+
+export function applyLayoutFile(fileText: string, type: "source" | "target"): void {
   let parsed: { hw: HardwareId; map: Record<string, string> };
   try {
-    parsed = parseZmkJson(jsonString, config.hw);
+    parsed = parseZmkLayout(fileText, config.hw);
   } catch (err) {
-    console.error("JSON Parse Error:", err);
-    showToast("Error parsing ZMK JSON.", true);
+    console.error("Layout parse error:", err);
+    showToast(err instanceof Error && err.message ? err.message : "Could not read that layout file.", true);
     return;
   }
 
@@ -262,15 +308,20 @@ export function applyZmkJson(jsonString: string, type: "source" | "target"): voi
   if (type === "source") {
     config.sourceJsonMap = parsed.map;
     config.sourceKey = "custom_json";
+    config.sourceKeymapText = fileText;
+    // A board with no built-in letters can only show the imported ones, so don't leave the
+    // target pointed at a layout name that renders blank.
+    if (!HARDWARE[config.hw].layouts[config.tgt]) config.tgt = "default";
   } else {
     config.targetJsonMap = parsed.map;
     config.tgt = "custom_json";
+    config.targetKeymapText = fileText;
   }
 
   persistConfig(config);
   refreshMaps();
   notify();
-  showToast(`ZMK JSON loaded for ${type}!`);
+  showToast(`${type === "source" ? "Source" : "Target"} layout loaded!`);
 }
 
 /* ==========================================================================

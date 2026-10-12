@@ -21,7 +21,8 @@ export function isHomerow(hw: HardwareId, pos: string): boolean {
   if (hw === "go60") return ["LH_C5R3", "LH_C4R3", "LH_C3R3", "LH_C2R3", "RH_C2R3", "RH_C3R3", "RH_C4R3", "RH_C5R3"].includes(pos);
   if (hw === "corne" || hw === "voyager")
     return ["L_C1R1", "L_C2R1", "L_C3R1", "L_C4R1", "R_C1R1", "R_C2R1", "R_C3R1", "R_C4R1"].includes(pos);
-  return false;
+  // Imported boards: the second row is the resting row.
+  return /^R1C/.test(pos);
 }
 
 export function buildMap(
@@ -40,9 +41,9 @@ export function buildMap(
 
   const map: Record<string, string> = {};
   const posArray = HARDWARE[hw].pos;
-  const layoutArray = HARDWARE[hw].layouts[layoutName] || HARDWARE[hw].layouts["qwerty"];
+  const layoutArray = HARDWARE[hw].layouts[layoutName] || HARDWARE[hw].layouts["qwerty"] || [];
   posArray.forEach((p, i) => {
-    map[p] = layoutArray[i];
+    map[p] = layoutArray[i] ?? "";
   });
   return map;
 }
@@ -109,6 +110,20 @@ export function getFingerName(pos: string): string {
       if (c === 9) return "R mid";
       return "R index";
     }
+  }
+  // Imported boards name positions R<row>C<col>: derive the finger from the column, and
+  // treat rows past the home rows (row 4) as thumbs.
+  const grid = pos.match(/^R(\d+)C(\d+)$/);
+  if (grid) {
+    const row = parseInt(grid[1]);
+    const col = parseInt(grid[2]);
+    const hand = col <= 5 ? "L" : "R";
+    if (row >= 4) return hand + " thumb";
+    const withinHalf = col <= 5 ? col : 11 - col;
+    if (withinHalf <= 1) return hand + " pinky";
+    if (withinHalf === 2) return hand + " ring";
+    if (withinHalf === 3) return hand + " mid";
+    return hand + " index";
   }
   return "other";
 }
