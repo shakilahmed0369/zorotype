@@ -175,6 +175,7 @@ export interface HistorySummary {
 export interface UiState {
   ready: boolean;
   setupOpen: boolean;
+  historyOpen: boolean;
   textModalOpen: boolean;
   themeModalOpen: boolean;
   boardModalOpen: boolean;
@@ -191,7 +192,8 @@ export interface UiState {
   typedLayerUntil: number;
   heatmap: Record<string, number> | null;
   result: TestResult | null;
-  bestScores: HistoryEntry[];
+  /** Every saved result, oldest first. */
+  history: HistoryEntry[];
   historySummary: HistorySummary | null;
   practiceResults: PracticeResult[] | null;
 }

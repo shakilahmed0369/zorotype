@@ -7,15 +7,16 @@ import { StatsPanel } from "./StatsPanel";
 export function TypingArea() {
   const { config, game, ui } = useEngine();
   const rtl = isRTL(config.lang);
+  const panelOpen = ui.setupOpen || ui.historyOpen;
   const caretRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
 
-  const showSample = !ui.setupOpen && !game.testCompleted;
-  const showStatsBlock = !ui.setupOpen && !game.testCompleted;
-  const showTimer = parseInt(config.timed) > 0 && game.testStarted && !game.testCompleted && !ui.setupOpen;
-  const showStreak = game.testStarted && !game.testCompleted && !ui.setupOpen;
-  const showDebug = config.debug && !game.testCompleted && !ui.setupOpen;
+  const showSample = !panelOpen && !game.testCompleted;
+  const showStatsBlock = !panelOpen && !game.testCompleted;
+  const showTimer = parseInt(config.timed) > 0 && game.testStarted && !game.testCompleted && !panelOpen;
+  const showStreak = game.testStarted && !game.testCompleted && !panelOpen;
+  const showDebug = config.debug && !game.testCompleted && !panelOpen;
 
   const sampleLen = game.sample.length;
   const typedLen = game.typed.length;
@@ -50,7 +51,7 @@ export function TypingArea() {
   }, [game.typed, game.sample]);
 
   return (
-    <div className="w-full max-w-[1050px] flex flex-col flex-1 items-center justify-start pb-[5vh] transition-[width] duration-300">
+    <div className="w-full max-w-[1050px] flex flex-col flex-1 items-center justify-start transition-[width] duration-300">
       {showDebug && (
         <div className="w-full bg-black/20 px-3 py-2 rounded-lg mb-[10px] text-xs text-correct border border-white/5">
           {ui.debugText}

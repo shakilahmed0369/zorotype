@@ -6,6 +6,7 @@ import {
   setPref,
   setTimed,
   setWordCount,
+  toggleHistory,
   toggleSettings,
 } from "@/lib/engine";
 import { langHasPhrases } from "@/lib/languages";
@@ -128,6 +129,24 @@ export function Header() {
             ))
           )}
         </div>
+
+        <button
+          className={`bg-transparent border-none cursor-pointer transition-colors duration-300 outline-none p-[5px] flex items-center ${
+            ui.historyOpen ? "text-accent" : "text-muted hover:text-accent"
+          }`}
+          onClick={toggleHistory}
+          title="Personal bests and history"
+          aria-label="Personal bests and history"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5 block" fill="currentColor" aria-hidden="true">
+            <path d="M7 3.4h10v5.2a5 5 0 0 1-10 0V3.4z" />
+            <rect x="4.6" y="4.6" width="2.6" height="4.4" rx="1.3" />
+            <rect x="16.8" y="4.6" width="2.6" height="4.4" rx="1.3" />
+            <rect x="11.1" y="13" width="1.8" height="4.4" />
+            <rect x="8.2" y="17" width="7.6" height="1.8" rx="0.9" />
+            <rect x="7" y="19.6" width="10" height="1.6" rx="0.8" />
+          </svg>
+        </button>
 
         <button
           className="bg-transparent border-none text-muted cursor-pointer transition-all duration-300 outline-none p-[5px] flex items-center hover:text-accent hover:rotate-90"

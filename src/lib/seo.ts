@@ -16,6 +16,8 @@ export const AUTHOR_URL = "https://github.com/shakilahmed0369";
 export const PORTFOLIO_URL = "https://algovar.com";
 export const COMPANY_NAME = "Algovar";
 export const COMPANY_URL = "https://algovar.com";
+/** Short form for visible credits, e.g. the footer. */
+export const COMPANY_LABEL = "algovar.com";
 
 export const SITE_KEYWORDS = [
   "ZMK typing trainer",

@@ -90,6 +90,7 @@ const game: GameState = {
 const ui: UiState = {
   ready: false,
   setupOpen: false,
+  historyOpen: false,
   textModalOpen: false,
   themeModalOpen: false,
   boardModalOpen: false,
@@ -103,7 +104,7 @@ const ui: UiState = {
   typedLayerUntil: 0,
   heatmap: null,
   result: null,
-  bestScores: [],
+  history: [],
   historySummary: null,
   practiceResults: null,
 };
@@ -150,7 +151,7 @@ export async function init(): Promise<void> {
   if (!LANGUAGES[config.lang]) config.lang = "en";
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
-  ui.bestScores = loadHistory();
+  ui.history = loadHistory();
   notify();
 
   // Load word lists: Monkeytype's English list, plus the active language's list if non-English.
@@ -319,16 +320,27 @@ export function showToast(msg: string, isError = false): void {
 
 export function handleLogoClick(): void {
   if (ui.setupOpen) toggleSettings();
+  else if (ui.historyOpen) toggleHistory();
   else restartCurrentMode();
 }
 
 export function toggleSettings(): void {
+  ui.historyOpen = false;
   ui.setupOpen = !ui.setupOpen;
   ui.keyFlash = null;
   if (!ui.setupOpen) {
     window.focus();
     if (config.showKb) refreshMaps();
   }
+  notify();
+}
+
+/** Personal bests and every saved test — a page of its own, the way Settings is. */
+export function toggleHistory(): void {
+  ui.setupOpen = false;
+  ui.historyOpen = !ui.historyOpen;
+  ui.keyFlash = null;
+  if (!ui.historyOpen) window.focus();
   notify();
 }
 
@@ -734,7 +746,7 @@ export function endTest(earlyExit = false): void {
     });
     ui.historySummary = summarizeHistory(loadHistory());
     ui.heatmap = game.mistakeChars;
-    ui.bestScores = loadHistory();
+    ui.history = loadHistory();
   } else {
     ui.heatmap = game.mistakeChars;
     ui.practiceResults = computePracticeResults(game.practiceTargetChars, game.mistakeChars, game.sample);
@@ -919,11 +931,12 @@ function flashKey(pos: string | undefined, kind: "active" | "active-error" = "ac
 export function handleKeyDown(e: KeyboardEvent): void {
   if (ui.textModalOpen || ui.themeModalOpen || ui.boardModalOpen) return;
 
-  // 1. Settings Exit Interception
-  if (ui.setupOpen) {
+  // 1. Panel Exit Interception — the trainer is behind a full-page panel.
+  if (ui.setupOpen || ui.historyOpen) {
     e.preventDefault();
     if (e.key === "Escape" || e.key === "Enter") {
-      toggleSettings();
+      if (ui.historyOpen) toggleHistory();
+      else toggleSettings();
     }
     return;
   }

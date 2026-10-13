@@ -78,7 +78,7 @@ function PracticeImprovement({ results }: { results: PracticeResult[] }) {
 
 export function StatsPanel() {
   const { config, game, ui } = useEngine();
-  if (!ui.result || !game.testCompleted || ui.setupOpen) return null;
+  if (!ui.result || !game.testCompleted || ui.setupOpen || ui.historyOpen) return null;
   const result = ui.result;
   const mistakeChars = Object.keys(game.mistakeChars).sort((a, b) => game.mistakeChars[b] - game.mistakeChars[a]);
 

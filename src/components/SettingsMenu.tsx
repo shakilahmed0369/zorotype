@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { applyKeyboardLayout, applyLayoutFile, clearAllData, openBoardModal, openThemeModal, setLang, setPref } from "@/lib/engine";
 import { BOARD_CATALOG } from "@/lib/board-catalog";
@@ -55,9 +56,34 @@ function PrefRow({
   );
 }
 
+// The panel is long enough to lose your place in, so the way back up sits in the corner and
+// only appears once there is something to scroll back from.
+function ScrollTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 300);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Go to top"
+      title="Go to top"
+      className={`fixed bottom-[30px] right-[30px] z-[900] w-11 h-11 rounded-full bg-key text-correct font-[inherit] text-lg font-bold border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-all duration-300 hover:text-accent ${
+        visible ? "opacity-100" : "pointer-events-none opacity-0 translate-y-2"
+      }`}
+    >
+      ↑
+    </button>
+  );
+}
+
 export function SettingsMenu() {
-  const { config, ui } = useEngine();
-  const best = [...ui.bestScores].sort((a, b) => b.wpm - a.wpm).slice(0, 5);
+  const { config } = useEngine();
   const theme = getTheme(config.theme);
 
   const handleLayoutUpload = (e: ChangeEvent<HTMLInputElement>, type: "source" | "target") => {
@@ -80,27 +106,6 @@ export function SettingsMenu() {
 
   return (
     <div className="w-full max-w-[1050px] bg-transparent p-0 mb-[30px] flex flex-col gap-[30px] animate-slide-down shrink-0">
-      {best.length > 0 && (
-        <div>
-          <div className={SECTION_TITLE}>Personal Bests (Top 5)</div>
-          <div className={`${SECTION} mb-[10px]`}>
-            {best.map((h, i) => (
-              <div
-                key={i}
-                className="flex justify-between px-5 py-[10px] border-b-2 border-bg last:border-b-0 text-correct text-sm"
-              >
-                <div className="text-accent text-lg font-bold min-w-[80px]">{h.wpm} wpm</div>
-                <div className="text-muted text-xs flex gap-[15px] items-center">
-                  <span>{h.acc}% acc</span>
-                  <span>{h.mode}</span>
-                  <span>{new Date(h.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div>
         <div className={SECTION_TITLE}>Input Language</div>
         <div className={SECTION}>
@@ -375,6 +380,8 @@ export function SettingsMenu() {
           </div>
         </div>
       </div>
+
+      <ScrollTop />
     </div>
   );
 }

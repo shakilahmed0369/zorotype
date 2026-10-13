@@ -39,7 +39,7 @@ export function Keyboard() {
     };
   }, []);
 
-  if (!config.showKb || config.blindMode || ui.setupOpen) return null;
+  if (!config.showKb || config.blindMode || ui.setupOpen || ui.historyOpen) return null;
 
   const statsActive = game.testCompleted;
   const stack = game.currentLayers;
@@ -67,7 +67,7 @@ export function Keyboard() {
 
   const startDrag = (e: ReactMouseEvent, pos: string) => {
     // Drag-remap edits the base layer only; upper layers are shown, not edited.
-    if (statsActive || ui.setupOpen || layer !== 0) return;
+    if (statsActive || ui.setupOpen || ui.historyOpen || layer !== 0) return;
     const label = workingMap[pos];
     if (!label || label === BRAILLE_BLANK || label === "ø") return;
     dragPosRef.current = pos;
