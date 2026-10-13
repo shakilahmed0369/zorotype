@@ -3,11 +3,18 @@ import { useEngine } from "@/hooks/useEngine";
 import { closeBoardModal, setHardware } from "@/lib/engine";
 import { searchBoards } from "@/lib/board-library";
 import { HARDWARE } from "@/lib/hardware";
+import { buildKeyRects, currentLayoutMap, getMirroredMap } from "@/lib/keyboard";
+import { BoardSvg } from "./BoardSvg";
 
 const BUILT_IN = ["ansi60", "glove80", "go60", "corne", "voyager"];
+const NOTE = "text-[11px] text-muted text-center";
 
+/**
+ * Every keyboard the trainer knows how to draw: the built-ins, the library, and whatever was loaded
+ * from a file — with the current board drawn underneath, so a switch can be judged by its shape.
+ */
 export function BoardModal() {
-  const { config } = useEngine();
+  const { config, ui } = useEngine();
   const [query, setQuery] = useState("");
 
   const builtIn = useMemo(() => {
@@ -20,9 +27,14 @@ export function BoardModal() {
   const library = useMemo(() => searchBoards(query), [query]);
   const current = config.customBoard;
 
+  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw]);
+  const map = currentLayoutMap(config);
+  const hasLetters = Object.values(map).some((label) => label);
+
+  // Picking a board only switches it: the modal stays open so boards can be compared against the
+  // preview before it is closed.
   const pick = (id: string) => {
     void setHardware(id);
-    closeBoardModal();
   };
 
   const row = (id: string, name: string, hint: string) => {
@@ -68,7 +80,26 @@ export function BoardModal() {
           </button>
         </div>
 
-        <div className="overflow-y-auto pr-2 flex flex-col gap-4">
+        <div className="shrink-0 flex flex-col items-center gap-2 mb-4 [&>svg]:max-h-[240px]">
+          {hasLetters ? (
+            <BoardSvg
+              hw={config.hw}
+              layout={layout}
+              map={config.mirror ? getMirroredMap(map) : map}
+              ready={ui.ready}
+              homerow={config.homerow}
+            />
+          ) : (
+            <div className={`${NOTE} py-6`}>
+              No letters for this board — load a .keymap in Settings to give it keycaps.
+            </div>
+          )}
+          <div className={NOTE}>
+            {HARDWARE[config.hw]?.name ?? config.hw} · the typing board draws this keyboard
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto pr-2 flex flex-col gap-4">
           {current && (
             <div className="flex flex-col gap-1">
               <div className="text-xs text-muted uppercase tracking-[1px] pl-1">
