@@ -57,7 +57,11 @@ under your hands.
 ### Training
 
 - **Modes** — `time` (15/30/60/120s), `words` (10/25/50/100), `news` (live text from NPR and NYT),
-  and `custom` (paste your own text).
+  `code` (real source snippets) and `custom` (paste your own text).
+- **Coding practice** — 24 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
+  Java, C# and C++), chosen in Settings. Code is drawn with its real line breaks and indentation;
+  press `Enter` at the end of a line and the next line's indent is filled in for you, so only the
+  visible characters are typed.
 - **Input rules** — *normal*, *expert* (backspace locked) and *master* (frozen until you fix the
   error), plus stop-on-error for letters or words. Difficulty is recorded with every result.
 - **Scoring** — net WPM, raw WPM, real keypress accuracy, streaks, a per-finger accuracy breakdown,
@@ -90,7 +94,8 @@ under your hands.
 2. **Settings (⚙)** → pick your **Hardware**, then your **Keyboard Layout**: a standard one, or
    `load file` for your own `.keymap` / `.json` (layers and all).
 3. Choose a mode and a length in the nav bar; `@ punctuation` and `# numbers` weave real symbols and
-   capitals into the pool.
+   capitals into the pool. `code` swaps the pool for real source snippets — pick the language in
+   **Settings → Coding**.
 4. Start typing. The board shows where your fingers should go; the caret waits for you.
 5. Finish the test for WPM, accuracy and a heatmap — or `Escape` to stop early.
 6. `Tab` `Enter` restarts at any time.
@@ -148,8 +153,8 @@ src/
                   # HistoryPanel, StatsPanel and the modals/overlays
   hooks/          # useEngine — subscribes React to the game store
   lib/            # engine.ts (store + game logic), keyboard.ts, zmk.ts, layers.ts, scoring.ts,
-                  # dictionary.ts, languages.ts, hardware.ts, board-library.ts, storage.ts,
-                  # themes.ts + theme-data.ts, seo.ts
+                  # dictionary.ts, languages.ts, hardware.ts, board-library.ts, code-snippets.ts,
+                  # storage.ts, themes.ts + theme-data.ts, seo.ts
 public/           # manifest, service worker, icons
 scripts/          # generators for the board library and the theme palettes
 ```

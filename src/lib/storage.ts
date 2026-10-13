@@ -1,3 +1,4 @@
+import { DEFAULT_CODE_LANGUAGE } from "./code-snippets";
 import { DEFAULT_THEME } from "./themes";
 import type { Config, GameMode, HistoryEntry } from "./types";
 
@@ -7,7 +8,7 @@ export const HISTORY_KEY = "zorotype_history";
 export const VER_KEY = "zorotype_ver";
 
 /** Modes a stored config may carry; anything else (a retired mode) falls back to words. */
-export const GAME_MODES: readonly GameMode[] = ["words", "news", "custom", "mistakes"];
+export const GAME_MODES: readonly GameMode[] = ["words", "news", "custom", "code", "mistakes"];
 
 export const DEFAULT_CONFIG: Config = {
   lang: "en",
@@ -18,6 +19,7 @@ export const DEFAULT_CONFIG: Config = {
   wordCount: "25",
   timed: "0",
   mode: "words",
+  codeLang: DEFAULT_CODE_LANGUAGE,
   difficulty: "normal",
   stopOnError: "off",
   blindMode: false,

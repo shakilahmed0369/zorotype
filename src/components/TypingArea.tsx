@@ -12,6 +12,12 @@ export function TypingArea() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const activeCharRef = useRef<HTMLSpanElement | null>(null);
 
+  // A line of source is longer than a word, so code is drawn smaller: the three-line window has to
+  // show a whole line without wrapping it, and white-space: pre-wrap is what makes the newlines and
+  // the indentation real in the first place.
+  const samplePx = config.mode === "code" ? 24 : 32;
+  const lineHeight = samplePx * 1.6;
+
   const showSample = !panelOpen && !game.testCompleted;
   const showStatsBlock = !panelOpen && !game.testCompleted;
   const showTimer = parseInt(config.timed) > 0 && game.testStarted && !game.testCompleted && !panelOpen;
@@ -37,10 +43,9 @@ export function TypingArea() {
     if (!caret || !wrapper || !activeChar) return;
     const caretX = rtl ? activeChar.offsetLeft + activeChar.offsetWidth : activeChar.offsetLeft;
     caret.style.transform = `translate(${caretX}px, ${activeChar.offsetTop}px)`;
-    const lineHeight = 51.2;
     const currentLine = Math.round(activeChar.offsetTop / lineHeight);
     wrapper.style.transform = currentLine > 1 ? `translateY(-${(currentLine - 1) * lineHeight}px)` : "translateY(0px)";
-  }, [game.typed, game.sample, rtl, showSample]);
+  }, [game.typed, game.sample, rtl, showSample, lineHeight]);
 
   useLayoutEffect(() => {
     const caret = caretRef.current;
@@ -83,7 +88,8 @@ export function TypingArea() {
 
       {showSample && (
         <div
-          className={`relative w-full text-[32px] leading-[1.6em] text-muted text-left [word-break:break-word] h-[calc(32px*1.6*3)] overflow-hidden tracking-[1px] mb-10 ${
+          style={{ fontSize: samplePx, lineHeight: 1.6, height: lineHeight * 3 }}
+          className={`relative w-full text-muted text-left [word-break:break-word] whitespace-pre-wrap overflow-hidden tracking-[1px] mb-10 ${
             rtl ? "[direction:rtl] text-right" : ""
           }`}
         >

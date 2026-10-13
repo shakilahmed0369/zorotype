@@ -8,7 +8,7 @@ export const SITE_NAME = "Zorotype";
 export const SITE_TITLE = "Zorotype — ZMK split keyboard typing trainer";
 export const SITE_H1 = "Zorotype — the typing trainer for split, ergonomic and matrix keyboards";
 export const SITE_DESCRIPTION =
-  "Practice typing on your split, ergonomic or matrix keyboard: ZMK layer-aware keycaps, 87 board layouts, Monkeytype-style WPM scoring. Free, no account.";
+  "Practice typing on your split, ergonomic or matrix keyboard: ZMK layer-aware keycaps, 87 board layouts, real code snippets in 8 languages, Monkeytype-style WPM scoring. Free, no account.";
 
 export const AUTHOR_NAME = "Shakil Ahmed";
 export const AUTHOR_HANDLE = "shakilahmed0369";
@@ -30,10 +30,12 @@ export const SITE_KEYWORDS = [
   "QMK keymap visualizer",
   "Monkeytype alternative",
   "ergonomic keyboard typing test",
+  "practice typing code",
+  "code typing practice",
 ];
 
 export const OG_ALT = "Zorotype — a ZMK typing trainer for split and ergonomic keyboards";
-export const OG_FEATURES = ["Corne", "Glove80", "Voyager", "ZMK layers", "WPM scoring"];
+export const OG_FEATURES = ["Corne", "Glove80", "Voyager", "ZMK layers", "Code practice", "WPM scoring"];
 
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -74,7 +76,8 @@ export const STRUCTURED_DATA = {
         "On-screen keyboard that follows the firmware layer you are typing on",
         "86-board keyboard library, plus QMK info.json and Keymap Editor imports",
         "Monkeytype-style scoring with WPM, accuracy and per-key heatmaps",
-        "Mistake drills, seven practice languages and every Monkeytype theme",
+        "Mistake drills, six practice languages and every Monkeytype theme",
+        "Code practice: 24 source snippets across 8 programming languages",
       ],
       author: { "@id": AUTHOR_ID },
       creator: { "@id": AUTHOR_ID },

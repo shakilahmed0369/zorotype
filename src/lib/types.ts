@@ -3,7 +3,7 @@ export type HardwareId = "ansi60" | "glove80" | "go60" | "corne" | "voyager" | (
 
 export type LanguageCode = "en" | "es" | "fr" | "it" | "pt" | "ar";
 
-export type GameMode = "words" | "news" | "custom" | "mistakes";
+export type GameMode = "words" | "news" | "custom" | "code" | "mistakes";
 
 export type Difficulty = "normal" | "expert" | "master";
 
@@ -77,6 +77,8 @@ export interface Config {
   wordCount: string;
   timed: string;
   mode: GameMode;
+  /** Programming language drilled by the code mode; a key into the snippet registry. */
+  codeLang: string;
   difficulty: Difficulty;
   stopOnError: StopOnError;
   blindMode: boolean;

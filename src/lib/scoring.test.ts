@@ -28,6 +28,19 @@ describe("countStrictCorrectChars", () => {
     }
     expect(countStrictCorrectChars(sample, typed)).toBeLessThan(positional);
   });
+
+  it("scores a correct code snippet line by line", () => {
+    const sample = "const a = 1;\n  return a;"; // 24 characters, six words
+    // Every whitespace run counts once, so the newline plus the two-space indent scores as one
+    // separator instead of three characters: 24 - 2.
+    expect(countStrictCorrectChars(sample, sample)).toBe(22);
+  });
+
+  it("drops only the wrong line of a snippet", () => {
+    const sample = "const a = 1;\n  return a;";
+    const typed = "const a = 1;\n  return b;";
+    expect(countStrictCorrectChars(sample, typed)).toBe(20); // everything up to "return "
+  });
 });
 
 describe("evaluateTest", () => {

@@ -9,31 +9,33 @@ export interface TestEvaluation {
   timeSec: number;
 }
 
-// Strict Monkeytype word-by-word evaluation: a word only counts (plus its trailing
-// space) when the typed word matches the sample word exactly. Used for both the final
-// result and the in-test wpm graph so the two can never disagree.
+// Strict Monkeytype word-by-word evaluation: a word only counts (plus its trailing separator)
+// when the typed word matches the sample word exactly. Used for both the final result and the
+// in-test wpm graph so the two can never disagree.
+//
+// A word is a run of non-whitespace and the whitespace run after it is its separator. Any
+// whitespace separates — a single space in prose, the newline plus the indentation in code — and a
+// run of it counts as one separator, the way the prose modes' single spaces do.
 export function countStrictCorrectChars(sample: string, typed: string): number {
   let correctChars = 0;
-  let currentWordStart = 0;
+  let pos = 0;
 
-  for (let i = 0; i <= sample.length; i++) {
-    if (sample[i] === " " || i === sample.length) {
-      const sampleWord = sample.slice(currentWordStart, i);
-      const typedWord = typed.slice(currentWordStart, i);
+  while (pos < sample.length) {
+    while (pos < sample.length && /\s/.test(sample[pos])) pos++;
+    if (pos >= sample.length) break;
 
-      // If the user hasn't typed this far yet (e.g. timed mode ended early), stop
-      if (typedWord.length === 0) break;
+    const wordStart = pos;
+    while (pos < sample.length && !/\s/.test(sample[pos])) pos++;
+    const wordEnd = pos;
 
-      // Monkeytype rule: the word MUST match exactly
-      if (sampleWord === typedWord) {
-        // AND the space following it MUST be a space (unless it's the very last word)
-        const typedSpace = typed[i];
-        if (i === sample.length || typedSpace === " ") {
-          correctChars += sampleWord.length + (typedSpace === " " ? 1 : 0);
-        }
-      }
-      currentWordStart = i + 1;
-    }
+    // The user has not typed this far yet (e.g. timed mode ended early): stop.
+    if (typed.length <= wordStart) break;
+    if (typed.slice(wordStart, wordEnd) !== sample.slice(wordStart, wordEnd)) continue;
+
+    const separator = typed[wordEnd];
+    const separatorTyped = separator !== undefined && /\s/.test(separator);
+    if (wordEnd === sample.length) correctChars += wordEnd - wordStart;
+    else if (separatorTyped) correctChars += wordEnd - wordStart + 1;
   }
 
   return correctChars;
@@ -147,6 +149,10 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
   return selected;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function computePracticeResults(
   targetChars: Record<string, number>,
   mistakeChars: Record<string, number>,
@@ -154,7 +160,9 @@ export function computePracticeResults(
 ): PracticeResult[] {
   return Object.keys(targetChars)
     .map((ch) => {
-      const occurrences = (sample.match(new RegExp(ch, "gi")) || []).length;
+      // The target character is escaped: a symbol like "(" or "*" would otherwise change what the
+      // pattern means, and code practice is full of them.
+      const occurrences = (sample.match(new RegExp(escapeRegExp(ch), "gi")) || []).length;
       const misses = mistakeChars[ch] || 0;
       return {
         ch,

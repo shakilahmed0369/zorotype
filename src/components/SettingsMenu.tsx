@@ -1,8 +1,9 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
 import { useEngine } from "@/hooks/useEngine";
-import { applyKeyboardLayout, applyLayoutFile, clearAllData, openBoardModal, openThemeModal, setLang, setPref } from "@/lib/engine";
+import { applyKeyboardLayout, applyLayoutFile, clearAllData, openBoardModal, openThemeModal, setCodeLanguage, setLang, setPref } from "@/lib/engine";
 import { BOARD_CATALOG } from "@/lib/board-catalog";
+import { CODE_LANGUAGES } from "@/lib/code-snippets";
 import { HARDWARE } from "@/lib/hardware";
 import { LANGUAGES } from "@/lib/languages";
 import { getTheme, listThemes } from "@/lib/themes";
@@ -123,6 +124,33 @@ export function SettingsMenu() {
                 {Object.entries(LANGUAGES).map(([code, spec]) => (
                   <option key={code} value={code} className={OPTION}>
                     {spec.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className={SECTION_TITLE}>Coding</div>
+        <div className={SECTION}>
+          <div className={ROW}>
+            <div className={LABEL_WRAP}>
+              <span className={LABEL_TITLE}>Code Language</span>
+              <span className={LABEL_DESC}>
+                Snippets for the code mode — {CODE_LANGUAGES.length} languages, three snippets each
+              </span>
+            </div>
+            <div className={ACTION}>
+              <select
+                value={config.codeLang}
+                onChange={(e) => setCodeLanguage(e.target.value)}
+                className={SELECT}
+              >
+                {CODE_LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id} className={OPTION}>
+                    {lang.name}
                   </option>
                 ))}
               </select>

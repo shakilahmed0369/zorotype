@@ -1,5 +1,7 @@
 import { useEngine } from "@/hooks/useEngine";
+import { codeLanguage } from "@/lib/code-snippets";
 import {
+  generateCode,
   handleLogoClick,
   openTextModal,
   setMode,
@@ -83,6 +85,13 @@ export function Header() {
             </button>
           )}
           <button
+            className={`${BTN} ${btnColor(mode === "code")}`}
+            onClick={() => setMode("code")}
+            title="Type real code — pick a language in Settings"
+          >
+            code
+          </button>
+          <button
             className={`${BTN} ${btnColor(mode === "custom")}`}
             onClick={() => setMode("custom")}
             title="Paste your own text"
@@ -103,6 +112,14 @@ export function Header() {
               title="Load another set"
             >
               {ui.newsLoading ? "loading..." : "change"}
+            </button>
+          ) : mode === "code" ? (
+            <button
+              className={`${BTN} text-muted hover:text-correct`}
+              onClick={generateCode}
+              title={`New ${codeLanguage(config.codeLang)?.name ?? config.codeLang} snippet`}
+            >
+              {codeLanguage(config.codeLang)?.short ?? config.codeLang}
             </button>
           ) : timed ? (
             TIME_LENGTHS.map((seconds) => (

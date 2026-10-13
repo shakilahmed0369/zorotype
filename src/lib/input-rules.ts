@@ -87,10 +87,12 @@ export function isInputBlocked(params: {
   mappedChar: string;
   difficulty: Difficulty;
   stopOnError: StopOnError;
+  /** Code mode fills the indentation in for you, so "wrong word" has nothing to hold you to. */
+  code: boolean;
 }): boolean {
-  const { typed, sample, mappedChar, difficulty, stopOnError } = params;
+  const { typed, sample, mappedChar, difficulty, stopOnError, code } = params;
   if (difficulty === "master" && isLastCharWrong(typed, sample)) return true;
   if (stopOnError === "letter" && isLastCharWrong(typed, sample)) return true;
-  if (stopOnError === "word" && wordStopBlocked(typed, sample, mappedChar)) return true;
+  if (stopOnError === "word" && !code && wordStopBlocked(typed, sample, mappedChar)) return true;
   return false;
 }

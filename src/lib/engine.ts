@@ -1,6 +1,7 @@
 import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./dictionary";
 import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
+import { autoIndentAfter, codeLanguage, DEFAULT_CODE_LANGUAGE, pickSnippet } from "./code-snippets";
 import { registerCustomBoard, HARDWARE } from "./hardware";
 import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, pressedChar } from "./input-rules";
 import { buildScriptLayouts, currentLayoutMap, currentMatchMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor, usesScriptLayout } from "./keyboard";
@@ -153,6 +154,7 @@ export async function init(): Promise<void> {
     : null;
   if (!LANGUAGES[config.lang]) config.lang = "en";
   if (!GAME_MODES.includes(config.mode)) config.mode = "words";
+  if (!codeLanguage(config.codeLang)) config.codeLang = DEFAULT_CODE_LANGUAGE;
   // A saved hardware id can outlive the board it named — a library board whose data is gone, or a
   // layout file imported by an older build — and nothing can draw a board that is not registered.
   if (!HARDWARE[config.hw]) config.hw = restoredBoard ?? DEFAULT_CONFIG.hw;
@@ -522,7 +524,7 @@ export async function setLang(lang: LanguageCode): Promise<void> {
    ========================================================================== */
 
 // Nav test-config bar actions.
-export function setMode(mode: "time" | "words" | "news" | "custom"): void {
+export function setMode(mode: "time" | "words" | "news" | "custom" | "code"): void {
   if (mode === "time") {
     config.mode = "words";
     if (parseInt(config.timed) <= 0) config.timed = "30";
@@ -540,10 +542,17 @@ export function setMode(mode: "time" | "words" | "news" | "custom"): void {
     void fetchNews();
     return;
   }
+  if (mode === "code") {
+    // A code test is never timed: the timer's continuation appends word-pool prose to the sample.
+    config.timed = "0";
+    generateCode();
+    return;
+  }
   openTextModal();
 }
 
 export function setTimed(seconds: string): void {
+  if (config.mode === "code") return;
   config.timed = seconds;
   persistConfig(config);
   generateWords();
@@ -552,7 +561,7 @@ export function setTimed(seconds: string): void {
 export function setWordCount(count: string): void {
   config.wordCount = count;
   persistConfig(config);
-  if (config.mode === "custom") notify();
+  if (config.mode === "custom" || config.mode === "code") notify();
   else generateWords();
 }
 
@@ -564,6 +573,20 @@ export function generateWords(): void {
   const shuffled = [...wordPool(config.lang)].sort(() => Math.random() - 0.5);
   for (let i = 0; i < count; i++) selected.push(shuffled[i % shuffled.length]);
   setupNewTest(selected.join(" "), { modify: true });
+}
+
+/** Code mode: one snippet from the selected language, kept verbatim so its layout survives. */
+export function generateCode(): void {
+  config.mode = "code";
+  persistConfig(config);
+  setupNewTest(pickSnippet(config.codeLang), { raw: true });
+}
+
+/** Choosing a language starts code practice straight away, the way applying custom text does. */
+export function setCodeLanguage(id: string): void {
+  if (!codeLanguage(id)) return;
+  config.codeLang = id;
+  generateCode();
 }
 
 export async function fetchNews(): Promise<void> {
@@ -589,7 +612,12 @@ export function restartCurrentMode(): void {
   }
   if (config.mode === "words") generateWords();
   else if (config.mode === "news") void fetchNews();
-  else setupNewTest(game.sample, { raw: config.mode === "custom" });
+  else if (config.mode === "code") {
+    // Every snippet has line breaks, so a one-line sample means there is nothing to replay yet —
+    // the boot path arrives here with whatever the word pool left behind. Custom text is replayed.
+    if (game.sample.includes("\n")) setupNewTest(game.sample, { raw: true });
+    else generateCode();
+  } else setupNewTest(game.sample, { raw: config.mode === "custom" });
 }
 
 export function setupNewTest(text: string, options: { raw?: boolean; modify?: boolean } = {}): void {
@@ -646,7 +674,8 @@ export function setupNewTest(text: string, options: { raw?: boolean; modify?: bo
    ========================================================================== */
 
 export function checkTestEnd(): void {
-  if (parseInt(config.timed) > 0 && game.timerRemaining > 0) {
+  // Only words mode runs on and appends more prose as the clock goes; a code test is untimed.
+  if (config.mode === "words" && parseInt(config.timed) > 0 && game.timerRemaining > 0) {
     const shuffled = [...wordPool(config.lang)].sort(() => Math.random() - 0.5);
     const extra: string[] = [];
     for (let i = 0; i < 15; i++) extra.push(shuffled[i % shuffled.length]);
@@ -684,6 +713,7 @@ export function endTest(earlyExit = false): void {
 
   let testTypeStr: string = config.mode;
   if (config.mode === "words") testTypeStr += " " + config.wordCount;
+  else if (config.mode === "code") testTypeStr = "code · " + (codeLanguage(config.codeLang)?.name ?? config.codeLang);
   else if (parseInt(config.timed) > 0) testTypeStr = "time " + config.timed;
   if (config.difficulty !== "normal") testTypeStr += " " + config.difficulty;
 
@@ -1015,6 +1045,25 @@ export function handleKeyDown(e: KeyboardEvent): void {
     return;
   }
 
+  // Code mode: Enter is the newline key, and the indentation of the line you land on is filled in
+  // for you. Only a running code test reaches this — Tab+Enter still restarts and Enter on the
+  // result screen still starts the next test, both handled above.
+  if (config.mode === "code" && mappedChar === "Enter" && game.testStarted && !game.testCompleted) {
+    e.preventDefault();
+    const atNewline = game.sample[game.typed.length] === "\n";
+    game.totalPresses++;
+    if (atNewline) game.correctPresses++;
+    game.typed += autoIndentAfter(game.sample, game.typed.length);
+    flashKey(pos, atNewline ? "active" : "active-error");
+    if (game.typed.length >= game.sample.length) {
+      checkTestEnd();
+    } else {
+      updatePredictedLayer();
+      notify();
+    }
+    return;
+  }
+
   // Block modifiers from scoring
   if (mappedChar.length > 1 && mappedChar !== " " && mappedChar !== "Space") {
     flashKey(pos);
@@ -1030,6 +1079,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
       mappedChar,
       difficulty: config.difficulty,
       stopOnError: config.stopOnError,
+      code: config.mode === "code",
     })
   ) {
     e.preventDefault();
@@ -1074,8 +1124,10 @@ export function handleKeyDown(e: KeyboardEvent): void {
       if (expected && expected.match(/[a-z\u0621-\u064A]/)) {
         game.mistakeChars[expected] = (game.mistakeChars[expected] || 0) + 1;
       }
+      // A code "word" can run across a line break, and mistake practice would then drill it as a
+      // prose word, so only runs that stay on one line are remembered.
       const cw = getCurrentWord(game.sample, game.typed.length);
-      if (cw) game.mistakeWords.add(cw);
+      if (cw && !/\s/.test(cw)) game.mistakeWords.add(cw);
     }
 
     game.totalPresses++;

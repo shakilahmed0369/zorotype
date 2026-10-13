@@ -103,24 +103,24 @@ describe("isInputBlocked", () => {
 
   it("never blocks with normal difficulty and stop-on-error off", () => {
     expect(
-      isInputBlocked({ typed: "thex", sample, mappedChar: " ", difficulty: "normal", stopOnError: "off" })
+      isInputBlocked({ typed: "thex", sample, mappedChar: " ", difficulty: "normal", stopOnError: "off", code: false })
     ).toBe(false);
   });
 
   it("master difficulty freezes while the last character is wrong", () => {
-    const master = { difficulty: "master", stopOnError: "off" } as const;
+    const master = { difficulty: "master", stopOnError: "off", code: false } as const;
     expect(isInputBlocked({ typed: "thex", sample, mappedChar: "c", ...master })).toBe(true);
     expect(isInputBlocked({ typed: "the", sample, mappedChar: " ", ...master })).toBe(false);
   });
 
   it("stop-on-error letter blocks until the wrong character is fixed", () => {
-    const letter = { difficulty: "normal", stopOnError: "letter" } as const;
+    const letter = { difficulty: "normal", stopOnError: "letter", code: false } as const;
     expect(isInputBlocked({ typed: "thex", sample, mappedChar: "c", ...letter })).toBe(true);
     expect(isInputBlocked({ typed: "the", sample, mappedChar: " ", ...letter })).toBe(false);
   });
 
   it("stop-on-error word lets you finish a word but not leave it wrong", () => {
-    const word = { difficulty: "normal", stopOnError: "word" } as const;
+    const word = { difficulty: "normal", stopOnError: "word", code: false } as const;
     // still inside a word: typing through the mistake is allowed
     expect(isInputBlocked({ typed: "th", sample, mappedChar: "x", ...word })).toBe(false);
     // an incomplete or wrong word cannot be closed with a space
@@ -130,5 +130,18 @@ describe("isInputBlocked", () => {
     expect(isInputBlocked({ typed: "thx", sample, mappedChar: "c", ...word })).toBe(true);
     // a complete, correct word can advance
     expect(isInputBlocked({ typed: "the", sample, mappedChar: " ", ...word })).toBe(false);
+  });
+
+  it("drops the word rule in code mode, where the indentation is filled in for you", () => {
+    const code = { difficulty: "normal", stopOnError: "word", code: true } as const;
+    expect(isInputBlocked({ typed: "thx", sample, mappedChar: " ", ...code })).toBe(false);
+    expect(isInputBlocked({ typed: "thx", sample, mappedChar: "c", ...code })).toBe(false);
+    // the letter and master rules are about the press itself, so code keeps them
+    expect(
+      isInputBlocked({ typed: "thex", sample, mappedChar: "c", difficulty: "normal", stopOnError: "letter", code: true })
+    ).toBe(true);
+    expect(
+      isInputBlocked({ typed: "thex", sample, mappedChar: "c", difficulty: "master", stopOnError: "off", code: true })
+    ).toBe(true);
   });
 });
