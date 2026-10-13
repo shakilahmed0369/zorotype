@@ -93,6 +93,17 @@ npm run themes:update # refresh the bundled Monkeytype theme palettes
 Deployment: pushing to `main` runs `.github/workflows/deploy.yml` (test → build → deploy to Pages).
 One-time repo setting: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
+Canonical URLs, Open Graph tags, the social card and the sitemap all name
+`https://zorotype.vercel.app/` — one place to change it is `src/lib/seo.ts`. The Pages mirror
+keeps its own icons and manifest so it stays installable, while its canonical tags point
+search engines at the Vercel copy. The `og:image` is rendered at build time to `/og.png` from
+`src/app/og.png/route.tsx`, so the card can never drift from the app's own palette.
+
+`src/lib/seo.ts` also carries the entity graph the page publishes in JSON-LD: the app, its
+author (`Person`, linked to the portfolio and GitHub) and the company behind it
+(`Organization`, linked as publisher and copyright holder). Those are metadata only — nothing
+about them appears in the interface.
+
 ---
 
 ## ⌨️ Supported Keyboards

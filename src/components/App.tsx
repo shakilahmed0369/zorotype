@@ -44,7 +44,9 @@ export default function App() {
       <TabRestartOverlay />
       <Header />
       {ui.setupOpen && <SettingsMenu />}
-      <TypingArea />
+      <main className="flex w-full flex-1 flex-col items-center">
+        <TypingArea />
+      </main>
       {ui.textModalOpen && <CustomTextModal />}
       {ui.themeModalOpen && <ThemeModal />}
       {ui.boardModalOpen && <BoardModal />}

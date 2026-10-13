@@ -1,5 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Poppins, Roboto_Mono } from "next/font/google";
+import {
+  AUTHOR_NAME,
+  COMPANY_NAME,
+  OG_ALT,
+  PORTFOLIO_URL,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+  STRUCTURED_DATA,
+  assetUrl,
+} from "@/lib/seo";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/themes";
 import "./globals.css";
 
@@ -24,18 +37,57 @@ const robotoMono = Roboto_Mono({
   display: "swap",
 });
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
 export const metadata: Metadata = {
-  title: "zorotype | Practice with your split keyboard",
-  description: "A typing test for Matrix layouts",
-  manifest: `${basePath}/manifest.json`,
+  // Every relative URL below resolves against the canonical origin, so the copy deployed on
+  // GitHub Pages points search engines and social cards at the same place the Vercel build does.
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_TITLE, template: `%s — ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [...SITE_KEYWORDS],
+  category: "education",
+  creator: AUTHOR_NAME,
+  publisher: COMPANY_NAME,
+  authors: [{ name: AUTHOR_NAME, url: PORTFOLIO_URL }],
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  // The card itself is rendered at /og.png (app/og.png/route.tsx) at build time.
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
+    images: [{ url: "/og.png", width: 1200, height: 630, type: "image/png", alt: OG_ALT }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/og.png", type: "image/png", alt: OG_ALT }],
+  },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false, email: false, address: false },
+  // Icons and the manifest stay on whichever deployment is serving this build, so the installable
+  // PWA keeps working on the Pages mirror.
+  manifest: assetUrl("/manifest.json"),
   icons: {
     icon: [
-      { url: `${basePath}/icon.svg`, type: "image/svg+xml" },
-      { url: `${basePath}/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: assetUrl("/icon.svg"), type: "image/svg+xml" },
+      { url: assetUrl("/icon-192.png"), sizes: "192x192", type: "image/png" },
     ],
-    apple: `${basePath}/icon-192.png`,
+    apple: assetUrl("/icon-192.png"),
   },
 };
 
@@ -43,6 +95,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#212830",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -61,6 +114,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         suppressHydrationWarning
       >
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
+        />
         {children}
       </body>
     </html>
