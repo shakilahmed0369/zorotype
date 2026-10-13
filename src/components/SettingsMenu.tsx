@@ -112,7 +112,7 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Practice Language</span>
-              <span className={LABEL_DESC}>Letters shown on the keyboard, and the words/phrases to type</span>
+              <span className={LABEL_DESC}>Letters shown on the keyboard, and the words to type</span>
             </div>
             <div className={ACTION}>
               <select

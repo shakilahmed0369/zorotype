@@ -2,17 +2,13 @@ import {
   AR_FALLBACK,
   ES_FALLBACK,
   FR_FALLBACK,
-  HE_PHRASES,
-  HE_WORDS_FALLBACK,
   IT_FALLBACK,
   PT_FALLBACK,
   QWERTY_TO_ARABIC,
-  QWERTY_TO_HEBREW,
 } from "./language-data";
 import type { LanguageCode, LanguageDef } from "./types";
 
 export const SCRIPT_MAPS: Record<string, Record<string, string>> = {
-  hebrew: QWERTY_TO_HEBREW,
   arabic: QWERTY_TO_ARABIC,
 };
 
@@ -26,7 +22,7 @@ export function normalizeArabic(w: string): string {
   return w.replace(/[\u064B-\u0652\u0640\u0670]/g, "").replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627");
 }
 
-// `script:'latin'` keeps the user's target layout; hebrew/arabic force theirs.
+// `script:'latin'` keeps the user's target layout; arabic forces its own.
 export const LANGUAGES: Record<LanguageCode, LanguageDef> = {
   en: { name: "English", dir: "ltr", script: "latin" },
   es: {
@@ -61,14 +57,6 @@ export const LANGUAGES: Record<LanguageCode, LanguageDef> = {
     fallback: PT_FALLBACK,
     normalize: stripLatinAccents,
   },
-  he: {
-    name: "עברית (Hebrew)",
-    dir: "rtl",
-    script: "hebrew",
-    files: ["hebrew_1k.json", "hebrew.json"],
-    fallback: HE_WORDS_FALLBACK,
-    phrases: HE_PHRASES,
-  },
   ar: {
     name: "العربية (Arabic)",
     dir: "rtl",
@@ -84,8 +72,4 @@ export const MT_LANG_BASE =
 
 export function isRTL(lang: LanguageCode): boolean {
   return LANGUAGES[lang]?.dir === "rtl";
-}
-
-export function langHasPhrases(lang: LanguageCode): boolean {
-  return !!LANGUAGES[lang]?.phrases;
 }

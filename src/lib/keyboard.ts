@@ -3,7 +3,7 @@ import { LANGUAGES, SCRIPT_MAPS } from "./languages";
 import type { ParsedZmk } from "./zmk";
 import type { Config, HardwareId, ImportedLayers, KeyGeo } from "./types";
 
-// Derive script-based target layouts (hebrew, arabic) for every board from its qwerty layout,
+// Derive the script-based target layout (arabic) for every board from its qwerty layout,
 // so pressing a physical key produces the correct letter (blind typing of that script).
 export function buildScriptLayouts(): void {
   (Object.keys(HARDWARE) as HardwareId[]).forEach((hw) => {
@@ -55,13 +55,11 @@ export function buildMap(
   return map;
 }
 
-// Hebrew and Arabic are typed blind: their generated script layout stands in for the target,
-// layers and all, unless the user pointed the target at an imported or dragged map.
+// Arabic is typed blind: its generated script layout stands in for the target, layers and all,
+// unless the user pointed the target at an imported or dragged map.
 export function usesScriptLayout(config: Config): boolean {
   const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
-  return (
-    (script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json"
-  );
+  return script === "arabic" && config.tgt !== "custom_dragged" && config.tgt !== "custom_json";
 }
 
 // The effective target map.

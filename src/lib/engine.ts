@@ -13,7 +13,7 @@ import {
   visibleLayer,
   withLayerOverride,
 } from "./layers";
-import { LANGUAGES, langHasPhrases } from "./languages";
+import { LANGUAGES } from "./languages";
 import { applyTextModifiers } from "./modifiers";
 import { buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
 import { playErrorSound } from "./sound";
@@ -21,6 +21,7 @@ import {
   APP_VERSION,
   CONFIG_KEY,
   DEFAULT_CONFIG,
+  GAME_MODES,
   HISTORY_KEY,
   VER_KEY,
   loadConfig as loadStoredConfig,
@@ -144,11 +145,12 @@ export async function init(): Promise<void> {
     localStorage.setItem(VER_KEY, APP_VERSION);
   }
 
-  buildScriptLayouts(); // derive the hebrew/arabic target layouts for every board
+  buildScriptLayouts(); // derive the arabic target layout for every board
 
   Object.assign(config, loadStoredConfig());
   if (config.customBoard) registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard));
   if (!LANGUAGES[config.lang]) config.lang = "en";
+  if (!GAME_MODES.includes(config.mode)) config.mode = "words";
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
   ui.history = loadHistory();
@@ -518,8 +520,7 @@ export async function setLang(lang: LanguageCode): Promise<void> {
   persistConfig(config);
 
   // Reconcile the current mode with the sources available in the new language.
-  if (config.mode === "news" && lang !== "en") config.mode = LANGUAGES[lang].phrases ? "phrases" : "words";
-  if (config.mode === "phrases" && !LANGUAGES[lang].phrases) config.mode = "words";
+  if (config.mode === "news" && lang !== "en") config.mode = "words";
 
   await loadLangDictionary(lang);
 
@@ -547,8 +548,7 @@ export function setMode(mode: "time" | "words" | "news" | "custom"): void {
     return;
   }
   if (mode === "news") {
-    if (langHasPhrases(config.lang)) generatePhrases();
-    else void fetchNews();
+    void fetchNews();
     return;
   }
   openTextModal();
@@ -563,8 +563,7 @@ export function setTimed(seconds: string): void {
 export function setWordCount(count: string): void {
   config.wordCount = count;
   persistConfig(config);
-  if (config.mode === "phrases") generatePhrases();
-  else if (config.mode === "custom") notify();
+  if (config.mode === "custom") notify();
   else generateWords();
 }
 
@@ -576,30 +575,6 @@ export function generateWords(): void {
   const shuffled = [...wordPool(config.lang)].sort(() => Math.random() - 0.5);
   for (let i = 0; i < count; i++) selected.push(shuffled[i % shuffled.length]);
   setupNewTest(selected.join(" "), { modify: true });
-}
-
-// "phrases" mode: whole curated sentences from the active language (currently Hebrew).
-// Occupies the middle mode button where English shows live "news".
-export function generatePhrases(): void {
-  const phrases = LANGUAGES[config.lang].phrases || [];
-  if (phrases.length === 0) {
-    generateWords();
-    return;
-  }
-  config.mode = "phrases";
-  persistConfig(config);
-  const count = parseInt(config.wordCount) || 25;
-  const pool = [...phrases].sort(() => Math.random() - 0.5);
-  const out: string[] = [];
-  let wc = 0;
-  let i = 0;
-  while (wc < count) {
-    const p = pool[i % pool.length];
-    out.push(p);
-    wc += p.split(" ").length;
-    i++;
-  }
-  setupNewTest(out.join(" "));
 }
 
 export async function fetchNews(): Promise<void> {
@@ -624,7 +599,6 @@ export function restartCurrentMode(): void {
     return;
   }
   if (config.mode === "words") generateWords();
-  else if (config.mode === "phrases") generatePhrases();
   else if (config.mode === "news") void fetchNews();
   else setupNewTest(game.sample, { raw: config.mode === "custom" });
 }
@@ -788,7 +762,6 @@ export function practiceMistakes(): void {
     fingerHits: game.fingerHits,
     workingMap,
     hw: config.hw,
-    lang: config.lang,
     count,
     pool: wordPool(config.lang),
   });
@@ -1113,7 +1086,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
       game.currentStreak = 0;
       if (config.sound) playErrorSound();
       const expected = targetChar?.toLowerCase();
-      if (expected && expected.match(/[a-z\u05D0-\u05EA\u0621-\u064A]/)) {
+      if (expected && expected.match(/[a-z\u0621-\u064A]/)) {
         game.mistakeChars[expected] = (game.mistakeChars[expected] || 0) + 1;
       }
       const cw = getCurrentWord(game.sample, game.typed.length);

@@ -119,7 +119,6 @@ describe("buildMistakePractice", () => {
       fingerHits: {},
       workingMap: buildMap("go60", "qwerty", "target", cfg()),
       hw: "go60",
-      lang: "en",
       count: 10,
       pool: ["apple", "banana", "cart", "amber", "zebra"],
     });
@@ -135,7 +134,6 @@ describe("buildMistakePractice", () => {
       fingerHits: { L_C0R1: { correct: 1, total: 10 } },
       workingMap,
       hw: "corne",
-      lang: "en",
       count: 5,
       pool: ["qqq", "zzz"],
     });

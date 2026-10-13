@@ -1,6 +1,6 @@
 import { HARDWARE } from "./hardware";
 import { getFingerName } from "./keyboard";
-import type { FingerHit, HardwareId, LanguageCode, PracticeResult } from "./types";
+import type { FingerHit, HardwareId, PracticeResult } from "./types";
 
 export interface TestEvaluation {
   wpm: number;
@@ -68,13 +68,12 @@ export interface MistakePracticeParams {
   fingerHits: Record<string, FingerHit>;
   workingMap: Record<string, string>;
   hw: HardwareId;
-  lang: LanguageCode;
   count: number;
   pool: string[];
 }
 
 export function buildMistakePractice(params: MistakePracticeParams): string[] {
-  const { mistakeChars, mistakeWords, fingerHits, workingMap, hw, lang, count, pool } = params;
+  const { mistakeChars, mistakeWords, fingerHits, workingMap, hw, count, pool } = params;
   const missedWords = [...mistakeWords];
   const charWeights: Record<string, number> = { ...mistakeChars };
 
@@ -92,7 +91,7 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
       HARDWARE[hw].pos.forEach((p) => {
         if (getFingerName(p, hw) === finger) {
           const label = workingMap[p];
-          if (label && label.length === 1 && label.match(/[a-z\u05D0-\u05EA\u0621-\u064A]/i)) {
+          if (label && label.length === 1 && label.match(/[a-z\u0621-\u064A]/i)) {
             charWeights[label.toLowerCase()] =
               (charWeights[label.toLowerCase()] || 0) + Math.round((1 - d.correct / d.total) * 5);
           }
@@ -132,14 +131,12 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
   if (selected.length < count && Object.keys(charWeights).length > 0) {
     const weightedChars = Object.entries(charWeights).flatMap(([c, n]) => Array(n).fill(c) as string[]);
     const vowels = "aeiou";
-    // Hebrew has no written vowels; drill the target letters directly
-    const useVowels = lang !== "he";
     while (selected.length < count) {
       let w = "";
       const len = 3 + Math.floor(Math.random() * 4);
       for (let j = 0; j < len; j++) {
         w +=
-          useVowels && j % 2 !== 0
+          j % 2 !== 0
             ? vowels[Math.floor(Math.random() * vowels.length)]
             : weightedChars[Math.floor(Math.random() * weightedChars.length)];
       }

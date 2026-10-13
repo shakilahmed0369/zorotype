@@ -40,8 +40,8 @@ describe("buildMap", () => {
 describe("currentTargetMap", () => {
   it("forces the generated script layout for rtl languages", () => {
     buildScriptLayouts();
-    const map = currentTargetMap(cfg({ lang: "he", hw: "go60" }));
-    expect(map[HARDWARE.go60.pos[1]]).toBe(HARDWARE.go60.layouts.hebrew[1]);
+    const map = currentTargetMap(cfg({ lang: "ar", hw: "go60" }));
+    expect(map[HARDWARE.go60.pos[13]]).toBe("ض"); // the Q key types its Arabic letter
   });
 
   it("respects explicit custom targets even for rtl languages", () => {
@@ -55,14 +55,12 @@ describe("currentTargetMap", () => {
 
 describe("usesScriptLayout", () => {
   it("only counts the blind-typed scripts", () => {
-    expect(usesScriptLayout(cfg({ lang: "he" }))).toBe(true);
     expect(usesScriptLayout(cfg({ lang: "ar" }))).toBe(true);
     expect(usesScriptLayout(cfg({ lang: "en" }))).toBe(false);
     expect(usesScriptLayout(cfg({ lang: "es" }))).toBe(false);
   });
 
   it("gives way to an explicit target", () => {
-    expect(usesScriptLayout(cfg({ lang: "he", tgt: "custom_json" }))).toBe(false);
     expect(usesScriptLayout(cfg({ lang: "ar", tgt: "custom_dragged" }))).toBe(false);
   });
 });
@@ -87,7 +85,7 @@ describe("currentTargetLayers", () => {
     expect(currentTargetLayers(cfg({ tgt: "colemak-dh", sourceLayers: imported }))).toBeNull();
     expect(currentTargetLayers(cfg({ tgt: "custom_dragged", sourceLayers: imported }))).toBeNull();
     buildScriptLayouts();
-    expect(currentTargetLayers(cfg({ lang: "he", tgt: "default", sourceLayers: imported }))).toBeNull();
+    expect(currentTargetLayers(cfg({ lang: "ar", tgt: "default", sourceLayers: imported }))).toBeNull();
   });
 });
 

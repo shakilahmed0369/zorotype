@@ -1,10 +1,13 @@
 import { DEFAULT_THEME } from "./themes";
-import type { Config, HistoryEntry } from "./types";
+import type { Config, GameMode, HistoryEntry } from "./types";
 
 export const APP_VERSION = "1.3.0";
 export const CONFIG_KEY = "zorotype_cfg";
 export const HISTORY_KEY = "zorotype_history";
 export const VER_KEY = "zorotype_ver";
+
+/** Modes a stored config may carry; anything else (a retired mode) falls back to words. */
+export const GAME_MODES: readonly GameMode[] = ["words", "news", "custom", "mistakes"];
 
 export const DEFAULT_CONFIG: Config = {
   lang: "en",

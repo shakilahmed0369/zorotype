@@ -45,7 +45,7 @@ Instead of making you guess where your keys are, it shows a live, interactive ma
 * **Algorithmic Mistake Tracking:** Automatically generate targeted practice sessions to isolate and fix your weakest keys.
 * **Full Test History:** Every finished test is kept locally, and the trophy in the header opens a page of its own — your top 5 runs, all-time best and average speed and accuracy, and the complete list of past tests.
 * **Open Source & Local:** Free, transparent, and private. Everything runs in your browser with zero backend — settings and history stay in `localStorage`.
-* **Multi-Language:** An input-language selector (English, Spanish, French, Italian, Portuguese, Hebrew, Arabic) teaches blind typing in each language, with words sourced from Monkeytype. Hebrew and Arabic switch the on-screen keyboard to their standard script layout (SI-1452 / Arabic 101) and render right-to-left; the Latin languages keep your chosen layout so you can drill it with foreign-language text.
+* **Multi-Language:** An input-language selector (English, Spanish, French, Italian, Portuguese, Arabic) teaches blind typing in each language, with words sourced from Monkeytype. Arabic switches the on-screen keyboard to its standard script layout (Arabic 101) and renders right-to-left; the Latin languages keep your chosen layout so you can drill it with foreign-language text.
 * **Every Monkeytype Theme:** All 187 Monkeytype color palettes are bundled and selectable from a searchable picker in the settings — applied instantly, remembered between sessions. The default is Monkeytype's `github` palette (green on slate).
 
 ---
@@ -140,7 +140,7 @@ No manual coding or manual mapping required. The bundled library data comes from
 ## 🕹️ How to Practice
 
 1. Select your **Hardware**, **Source OS Layout**, and **Target Layout** in the settings (⚙️)  
-2. Pick a mode in the nav test bar: **time** (15/30/60/120s), **words** (10/25/50/100), **news** / **phrases**, or **custom** — the same bar toggles **punctuation** and **numbers** and swaps the length buttons to match the mode
+2. Pick a mode in the nav test bar: **time** (15/30/60/120s), **words** (10/25/50/100), **news**, or **custom** — the same bar toggles **punctuation** and **numbers** and swaps the length buttons to match the mode
 3. Start typing. The UI will instantly fade into a distraction-free Focus Mode  
 4. Use the visual keyboard map if you forget where a key is located on your new layout  
 5. Finish the test to see your exact Net WPM, Accuracy, and a Heatmap of missed keys  

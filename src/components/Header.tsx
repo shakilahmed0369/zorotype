@@ -9,7 +9,6 @@ import {
   toggleHistory,
   toggleSettings,
 } from "@/lib/engine";
-import { langHasPhrases } from "@/lib/languages";
 
 const CARD = "flex items-center gap-[2px] bg-key px-2 py-[4px] rounded-lg";
 const BTN =
@@ -25,9 +24,9 @@ export function Header() {
 
   const timed = parseInt(config.timed) > 0;
   const mode = config.mode;
-  const middleMode = mode === "news" || mode === "phrases";
-  const showMiddle = config.lang === "en" || langHasPhrases(config.lang);
-  const middleLabel = ui.newsLoading ? "loading..." : config.lang === "en" ? "news" : "phrases";
+  const middleMode = mode === "news";
+  const showMiddle = config.lang === "en";
+  const middleLabel = ui.newsLoading ? "loading..." : "news";
 
   return (
     <header className="w-full max-w-[1050px] flex flex-wrap justify-between items-center gap-[15px] py-[25px] mb-5 shrink-0 transition-all duration-300">
@@ -78,7 +77,7 @@ export function Header() {
             <button
               className={`${BTN} ${btnColor(middleMode)}`}
               onClick={() => setMode("news")}
-              title={config.lang === "en" ? "Live news text" : "Curated phrases"}
+              title="Live news text"
             >
               {middleLabel}
             </button>

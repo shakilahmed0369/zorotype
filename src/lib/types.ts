@@ -1,15 +1,15 @@
 // Known boards, while still allowing ids registered at runtime from an imported layout file.
 export type HardwareId = "ansi60" | "glove80" | "go60" | "corne" | "voyager" | (string & {});
 
-export type LanguageCode = "en" | "es" | "fr" | "it" | "pt" | "he" | "ar";
+export type LanguageCode = "en" | "es" | "fr" | "it" | "pt" | "ar";
 
-export type GameMode = "words" | "news" | "phrases" | "custom" | "mistakes";
+export type GameMode = "words" | "news" | "custom" | "mistakes";
 
 export type Difficulty = "normal" | "expert" | "master";
 
 export type StopOnError = "off" | "letter" | "word";
 
-export type ScriptKind = "latin" | "hebrew" | "arabic";
+export type ScriptKind = "latin" | "arabic";
 
 export interface KeyGeo {
   x: number;
@@ -65,7 +65,6 @@ export interface LanguageDef {
   files?: string[];
   fallback?: string[];
   normalize?: (word: string) => string;
-  phrases?: string[];
 }
 
 export interface Config {

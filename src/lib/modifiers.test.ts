@@ -64,12 +64,12 @@ describe("applyTextModifiers", () => {
 
   it("keeps non-cased scripts intact", () => {
     expect(
-      applyTextModifiers("שלום עולם", {
+      applyTextModifiers("مرحبا بالعالم", {
         punctuation: true,
         numbers: false,
         capitalizeFirst: true,
         rand: sequence([0.99]),
       })
-    ).toBe("שלום עולם");
+    ).toBe("مرحبا بالعالم");
   });
 });
