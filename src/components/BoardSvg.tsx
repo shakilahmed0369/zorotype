@@ -52,7 +52,7 @@ export function BoardSvg({
   return (
     <svg
       viewBox={layout.viewBox}
-      className="w-full h-auto overflow-visible block"
+      className="w-full h-auto overflow-visible block select-none"
       style={{ maxWidth: layout.maxWidth }}
     >
       {ready &&

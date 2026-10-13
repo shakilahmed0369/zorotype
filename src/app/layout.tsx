@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           gets stamped by browser extensions (Grammarly adds data-gr-ext-installed and
           data-new-gr-c-s-check-loaded), which React would otherwise report as a mismatch. */}
       <body
-        className="bg-bg text-accent font-body flex flex-col items-center px-5 min-h-screen overflow-x-hidden select-none"
+        className="bg-bg text-accent font-body selection:bg-accent selection:text-bg flex flex-col items-center px-5 min-h-screen overflow-x-hidden"
         suppressHydrationWarning
       >
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
