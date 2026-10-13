@@ -51,7 +51,7 @@ export function TypingArea() {
   }, [game.typed, game.sample]);
 
   return (
-    <div className="w-full max-w-[1050px] flex flex-col flex-1 items-center justify-start transition-[width] duration-300">
+    <div className="w-full max-w-[1050px] flex flex-col flex-1 items-center justify-center transition-[width] duration-300">
       {showDebug && (
         <div className="w-full bg-black/20 px-3 py-2 rounded-lg mb-[10px] text-xs text-correct border border-white/5">
           {ui.debugText}
