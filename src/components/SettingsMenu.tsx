@@ -6,6 +6,7 @@ import { HARDWARE } from "@/lib/hardware";
 import { LANGUAGES } from "@/lib/languages";
 import { getTheme, listThemes } from "@/lib/themes";
 import type { Difficulty, LanguageCode, StopOnError } from "@/lib/types";
+import { LayoutPreview } from "./LayoutPreview";
 
 const SECTION_TITLE = "text-xs text-muted uppercase tracking-[1px] mb-[10px] pl-[5px]";
 const SECTION = "flex flex-col bg-key rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.15)]";
@@ -306,6 +307,11 @@ export function SettingsMenu() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div>
+        <div className={SECTION_TITLE}>Layout</div>
+        <LayoutPreview />
       </div>
 
       <div>

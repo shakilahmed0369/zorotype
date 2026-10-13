@@ -37,7 +37,7 @@ Instead of making you guess where your keys are, it shows a live, interactive ma
 ## ✨ Key Highlights
 
 * **Visualize Your Split Keyboard:** Map your Glove80, Go60, Corne, or Voyager in QWERTY, Colemak-DH, Dvorak, or any custom layout.
-* **Layer-Aware Keycaps:** The firmware layer key never reaches the browser, so Zorotype infers the layer instead — it redraws the keycaps for the layer your next character needs, marks the thumb to hold, and follows the layer a press came from for a moment after you type it.
+* **Layer-Aware Keycaps:** The firmware layer key never reaches the browser, so Zorotype infers the layer instead — it redraws the keycaps for the layer your next character needs, marks the thumb to hold, and follows the layer a press came from for a moment after you type it. **Settings → Layout** draws the board you picked, exactly like the typing page, so a new keyboard or keymap can be checked without leaving the panel.
 * **Test Drive Before Flashing:** Practice any QWERTY alternative safely in your browser *before* flashing it to your keyboard's firmware.
 * **Monkeytype-Inspired Experience:** Train inside a clean, beautiful, and instantly familiar fluid interface.
 * **Training Discipline:** Monkeytype-style input rules — *normal*, *expert* (backspace locked) and *master* (frozen until the error is fixed) difficulties, stop-on-error for letters or words, and a blind mode that hides the on-screen keyboard once you want to prove the muscle memory unprompted. Difficulty is recorded on each result.

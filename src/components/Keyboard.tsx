@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { setPinnedLayer, swapKeys } from "@/lib/engine";
-import { buildKeyRects, getMirroredMap, isHomerow, mirrorPos } from "@/lib/keyboard";
+import { buildKeyRects, getMirroredMap, mirrorPos } from "@/lib/keyboard";
 import { shortKeyLabel } from "@/lib/key-labels";
 import { activatorPositions, layerToMap, visibleLayer } from "@/lib/layers";
 import { getTheme, hexToRgb } from "@/lib/themes";
+import { BoardSvg } from "./BoardSvg";
 
 const BRAILLE_BLANK = "\u2800";
 
@@ -58,9 +59,8 @@ export function Keyboard() {
       })
     : undefined;
 
-  const heat = ui.heatmap;
-  const heatActive = !!heat && Object.keys(heat).length > 0;
-  const heatMax = heatActive ? Math.max(...Object.values(heat as Record<string, number>), 1) : 1;
+  const heat = ui.heatmap && Object.keys(ui.heatmap).length > 0 ? ui.heatmap : null;
+  const heatMax = heat ? Math.max(...Object.values(heat), 1) : 1;
   const heatTheme = getTheme(config.theme);
   const heatBase = hexToRgb(heatTheme.subAlt);
   const heatPeak = hexToRgb(heatTheme.error);
@@ -99,98 +99,19 @@ export function Keyboard() {
         </div>
       )}
 
-      <svg
-        viewBox={layout.viewBox}
-        className="w-full h-auto overflow-visible block"
-        style={{ maxWidth: layout.maxWidth }}
-      >
-        {ui.ready &&
-          layout.keys.map((k) => {
-            const label = workingMap[k.pos];
-            const isHidden = label === BRAILLE_BLANK || label === "ø";
-            const isBlank = label === "NONE" || label === "TRANS" || label === "TRNS" || isHidden;
-            const displayLabel = isBlank ? "" : shortKeyLabel(label === " " ? "Space" : (label ?? ""));
-            const flash = ui.keyFlash && ui.keyFlash.pos === k.pos ? ui.keyFlash.kind : null;
-            const isExpected = !!expectedPos && k.pos === expectedPos;
-            const homerow = config.homerow && isHomerow(config.hw, k.pos);
-
-            const errCount = heatActive && label && !isHidden ? (heat as Record<string, number>)[label.toLowerCase()] || 0 : 0;
-
-            const fillClass = flash
-              ? flash === "active"
-                ? "fill-correct"
-                : "fill-error"
-              : homerow && !isExpected
-                ? "fill-homerow"
-                : "fill-key";
-            const strokeClass = flash
-              ? flash === "active"
-                ? "stroke-correct"
-                : "stroke-error"
-              : isExpected || homerow
-                ? "stroke-accent"
-                : "stroke-edge";
-            const textClass = isExpected
-              ? "fill-expected font-extrabold"
-              : homerow
-                ? "fill-accent"
-                : "fill-keytext font-medium";
-
-            const rectStyle: CSSProperties = { opacity: isHidden ? 0 : 1 };
-            if (!flash && errCount > 0) {
-              const intensity = Math.min(errCount / heatMax, 1);
-              const r = Math.round(heatBase[0] + intensity * (heatPeak[0] - heatBase[0]));
-              const g = Math.round(heatBase[1] + intensity * (heatPeak[1] - heatBase[1]));
-              const b = Math.round(heatBase[2] + intensity * (heatPeak[2] - heatBase[2]));
-              rectStyle.fill = `rgb(${r},${g},${b})`;
-            }
-
-            const fontSize = displayLabel.length > 2 ? 12 : displayLabel.length > 1 ? 14 : 18;
-
-            return (
-              <g
-                key={k.pos}
-                id={`key-${k.pos}`}
-                className={`key-group ${layer === 0 ? "cursor-grab" : "cursor-default"}`}
-                transform={k.transform}
-                onMouseDown={(e) => startDrag(e, k.pos)}
-              >
-                <rect
-                  width={k.w}
-                  height={k.h}
-                  rx={8}
-                  ry={8}
-                  strokeWidth={isExpected ? 3 : 2}
-                  className={`transition-[fill,stroke] duration-150 ${fillClass} ${strokeClass}`}
-                  style={rectStyle}
-                />
-                <text
-                  x={k.w / 2}
-                  y={k.h / 2 + 1}
-                  fontSize={fontSize}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  style={{ opacity: homerow && !isExpected ? 0.8 : 1 }}
-                  className={`pointer-events-none font-key ${textClass}`}
-                >
-                  {displayLabel}
-                </text>
-                {holds.has(k.pos) && (
-                  <text
-                    x={k.w - 8}
-                    y={11}
-                    fontSize={11}
-                    textAnchor="end"
-                    dominantBaseline="central"
-                    className="fill-accent font-bold animate-pulse pointer-events-none"
-                  >
-                    ↑
-                  </text>
-                )}
-              </g>
-            );
-          })}
-      </svg>
+      <BoardSvg
+        hw={config.hw}
+        layout={layout}
+        map={workingMap}
+        ready={ui.ready}
+        homerow={config.homerow}
+        expectedPos={expectedPos}
+        holds={holds}
+        flash={ui.keyFlash}
+        heat={heat ? { counts: heat, max: heatMax, base: heatBase, peak: heatPeak } : null}
+        draggable={layer === 0}
+        onKeyMouseDown={startDrag}
+      />
 
       {!statsActive && (
         <div className="text-xs text-muted transition-opacity duration-300 opacity-60 mt-[15px]">

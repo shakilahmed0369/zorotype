@@ -55,12 +55,19 @@ export function buildMap(
   return map;
 }
 
-// The effective target map. Non-Latin languages (Hebrew, Arabic) force their generated
-// script layout, unless the user has an explicit custom target (uploaded JSON or dragged tweak).
-export function currentTargetMap(config: Config): Record<string, string> {
+// Hebrew and Arabic are typed blind: their generated script layout stands in for the target,
+// layers and all, unless the user pointed the target at an imported or dragged map.
+export function usesScriptLayout(config: Config): boolean {
   const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
-  if ((script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json") {
-    return buildMap(config.hw, script, "target", config);
+  return (
+    (script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json"
+  );
+}
+
+// The effective target map.
+export function currentTargetMap(config: Config): Record<string, string> {
+  if (usesScriptLayout(config)) {
+    return buildMap(config.hw, LANGUAGES[config.lang].script, "target", config);
   }
   return buildMap(config.hw, config.tgt, "target", config);
 }
@@ -73,10 +80,7 @@ export function importedLayersFrom(parsed: ParsedZmk): ImportedLayers {
 // Layer data for the effective target, mirroring currentTargetMap's fallbacks: a default target
 // is the source import, a built-in layout has a single layer, and a dragged map only edits base.
 export function currentTargetLayers(config: Config): ImportedLayers | null {
-  const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
-  if ((script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json") {
-    return null; // the generated script layout stands in for the target and has no layers
-  }
+  if (usesScriptLayout(config)) return null; // the generated script layout stands in for the target
   if (config.tgt === "default") return config.sourceLayers;
   if (config.tgt === "custom_json") return config.targetLayers;
   return null;
