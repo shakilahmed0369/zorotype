@@ -1,157 +1,191 @@
 <div align="center">
 
 # zorotype
-**ZMK Matrix Training with a familiar, buttery-smooth feel**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=next.js&logoColor=white)](#)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](#)
-[![Monkeytype Math](https://img.shields.io/badge/Monkeytype_WPM-Strict-e2b714?style=for-the-badge)](#)
-[![Zoro Research](https://img.shields.io/badge/Zoro_Research-2026-00E5FF?style=for-the-badge)](#)
+**The typing trainer for split, ergonomic and matrix keyboards.**
 
-*To love is to recognize. Master your split ergonomic keyboard with interactive visual aids.*
+Practise on your own keymap — every layer of it — with layer-aware keycaps,
+Monkeytype-style scoring, and 187 themes. No account, no backend: your settings and results stay in
+your browser.
 
-<br>
+[**Launch Zorotype →**](https://zorotype.vercel.app) &nbsp;·&nbsp; [GitHub Pages mirror](https://shakilahmed0369.github.io/zorotype/)
 
-<a href="https://shakilahmed0369.github.io/zorotype/" target="_blank">
-  <img 
-    src="https://img.shields.io/badge/🚀%20LAUNCH%20ZOROTYPE-CLICK%20TO%20START-e2b714?style=for-the-badge"
-    alt="Launch Zorotype"
-  />
-</a>
-
-<br><br>
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Tested with Vitest](https://img.shields.io/badge/tested_with-Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
 
 </div>
 
----
-
-## 🌐 Overview
-
-Zorotype is a simple typing trainer built specifically for split, ergonomic, and columnar keyboards. 
-
-Instead of making you guess where your keys are, it shows a live, interactive map of your exact keyboard on the screen. As you type, it highlights the keys you need to hit next. It also lets you test-drive new layouts like Colemak-DH or Dvorak to build up your muscle memory *before* you actually flash them to your hardware.
+![Zorotype — the typing trainer for split, ergonomic and matrix keyboards](https://zorotype.vercel.app/og.png)
 
 ---
 
-## ✨ Key Highlights
+## Why Zorotype
 
-* **Visualize Your Split Keyboard:** Map your Glove80, Go60, Corne, or Voyager in QWERTY, Colemak-DH, Dvorak, or any custom layout.
-* **Layer-Aware Keycaps:** The firmware layer key never reaches the browser, so Zorotype infers the layer instead — it redraws the keycaps for the layer your next character needs, marks the thumb to hold, and follows the layer a press came from for a moment after you type it. **Settings → Layout** draws the board you picked, exactly like the typing page, so a new keyboard or keymap can be checked without leaving the panel.
-* **Test Drive Before Flashing:** Practice any QWERTY alternative safely in your browser *before* flashing it to your keyboard's firmware.
-* **Monkeytype-Inspired Experience:** Train inside a clean, beautiful, and instantly familiar fluid interface.
-* **Training Discipline:** Monkeytype-style input rules — *normal*, *expert* (backspace locked) and *master* (frozen until the error is fixed) difficulties, stop-on-error for letters or words, and a blind mode that hides the on-screen keyboard once you want to prove the muscle memory unprompted. Difficulty is recorded on each result.
-* **Symbol & Number Drill:** the punctuation and numbers modifiers weave capitals, `, . ; : ? !`, decimals and percentages into the word pool — the real-world test for layered keyboards. Capitals are enforced, so Shift comes from the correct hand.
-* **Algorithmic Mistake Tracking:** Automatically generate targeted practice sessions to isolate and fix your weakest keys.
-* **Full Test History:** Every finished test is kept locally, and the trophy in the header opens a page of its own — your top 5 runs, all-time best and average speed and accuracy, and the complete list of past tests.
-* **Open Source & Local:** Free, transparent, and private. Everything runs in your browser with zero backend — settings and history stay in `localStorage`.
-* **Multi-Language:** An input-language selector (English, Spanish, French, Italian, Portuguese, Arabic) teaches blind typing in each language, with words sourced from Monkeytype. Arabic switches the on-screen keyboard to its standard script layout (Arabic 101) and renders right-to-left; the Latin languages keep your chosen layout so you can drill it with foreign-language text.
-* **Every Monkeytype Theme:** All 187 Monkeytype color palettes are bundled and selectable from a searchable picker in the settings — applied instantly, remembered between sessions. The default is Monkeytype's `github` palette (green on slate).
+Typing trainers assume a flat 60-key board. Split and columnar keyboards are not that: the letters
+sit under different fingers, half the alphabet lives behind a thumb key, and `1` is a layer away
+from `Q`. Zorotype draws **your** board while you type, follows the layer your hands are in, and
+scores every press the way Monkeytype does — so you can build the muscle memory before you flash
+the firmware, and keep it afterwards.
 
 ---
 
-## 🧱 Tech & Project Structure
+## What it does
 
-Next.js 16 (App Router) + React 19, TypeScript, Tailwind CSS v4. Built as a fully static export (`output: 'export'`) and deployed to GitHub Pages.
+### The board
 
-```
-src/
-  app/            # layout (fonts + metadata + theme bootstrap), page, Tailwind theme (globals.css)
-  components/     # Header, SettingsMenu, TypingArea, Keyboard, StatsPanel, ThemeModal, overlays, modal, toast
-  hooks/          # useEngine — subscribes React to the game store
-  lib/            # engine.ts (game state store), keyboard.ts, zmk.ts, scoring.ts,
-                  # dictionary.ts, languages.ts, hardware.ts, storage.ts, sound.ts,
-                  # themes.ts + theme-data.ts (Monkeytype palettes)
-public/           # manifest.json, sw.js, icons (PWA shell)
-scripts/          # update-themes.mjs — regenerates the bundled Monkeytype palettes
-```
+- **Layer-aware keycaps.** The firmware layer key never reaches the browser, so Zorotype infers the
+  layer instead: it redraws the keycaps for the layer your next character needs, marks the key to
+  hold with `↑`, and follows the layer a press came from for a moment after you type it. `&trans`
+  keys show what they inherit from the layer below.
+- **Settings → Layout** draws the board you picked, exactly like the typing page, so you can check
+  a new keyboard or keymap without leaving the panel — and it follows you when you change the
+  keyboard.
+- **87 boards to choose from.** Five built-ins (MoErgo Glove80, MoErgo Go60, Corne, ZSA Voyager,
+  ANSI 60%) plus a searchable library of community layouts — Lily58, Sofle, Kyria, Iris, ErgoDox,
+  Planck, Preonic and more.
+- **Your keymap, parsed properly.** Import a ZMK `.keymap`/`.dtsi`, a Keymap Editor `.json`, or a
+  QMK `info.json` for the hardware. Behaviours are unpacked (`&kp`, `&mt`, `&lt`, `&mo`, `&sl`,
+  `&to`, inline macros, `&trans`), modifiers are stripped to the base character, every layer is
+  read, and layer/bluetooth/reset keys become inert labels so they never pollute your stats.
+- **Drag to remap.** Tweak the target layout by dragging keycaps around on the board itself — a
+  what-if before you touch firmware (edits the base layer).
+- **Derived starting point.** A board with no imported keymap still works: Zorotype derives a
+  standard QWERTY from the key geometry, so the on-screen board is useful immediately.
 
-The game state lives outside React in `src/lib/engine.ts` (an external store with all the original
-typing logic), and components subscribe via `useSyncExternalStore`. Keyboard geometry, ZMK parsing,
-dictionary loading, and Monkeytype scoring are pure modules covered by Vitest unit tests.
+### Training
 
-Themes are applied by swapping the CSS variables behind every Tailwind token (background, main,
-caret, sub, sub-alt, text, error), with a few derived values (key border, homerow tint,
-expected-key text) computed per palette so light and dark themes both stay readable. The chosen
-theme is cached in `localStorage` and re-applied by a tiny inline script before first paint.
+- **Modes** — `time` (15/30/60/120s), `words` (10/25/50/100), `news` (live text from NPR and NYT),
+  and `custom` (paste your own text).
+- **Input rules** — *normal*, *expert* (backspace locked) and *master* (frozen until you fix the
+  error), plus stop-on-error for letters or words. Difficulty is recorded with every result.
+- **Scoring** — net WPM, raw WPM, real keypress accuracy, streaks, a per-finger accuracy breakdown,
+  and a heatmap of the keys you missed.
+- **Mistake practice** — the algorithm builds a drill from your weakest characters and fingers; from
+  the result screen, `Space` starts it.
+- **Focus when you want it** — blind mode hides the board entirely once you trust your hands;
+  homerow highlighting, next-key hints and sound are each a toggle.
+
+### Around the test
+
+- **History page.** The trophy in the header opens your personal bests (top 5), all-time best and
+  average speed and accuracy, and every saved test — ten per page, newest first.
+- **187 Monkeytype themes**, searchable with live swatches, applied instantly and remembered.
+- **Six languages** — English, Spanish, French, Italian, Portuguese and Arabic. Arabic renders
+  right-to-left through its standard (101) script layout; the Latin languages keep your layout so
+  you can drill it with foreign text. Words come from Monkeytype's language files with offline
+  fallbacks.
+- **Installable.** A web app manifest and icons make it installable on desktop and mobile. The
+  service worker is deliberately a pass-through — there is no offline cache yet.
+- **Local by default.** Settings and your last 200 results live in `localStorage`. Word lists are
+  fetched from Monkeytype's repository (with bundled fallbacks) and news mode pulls headlines
+  through a public RSS proxy — nothing about you is ever sent, and there is no account to create.
 
 ---
 
-## 🛠️ Development
+## Quick start
+
+1. Open [zorotype.vercel.app](https://zorotype.vercel.app) — nothing to install.
+2. **Settings (⚙)** → pick your **Hardware**, then your **Source OS Layout** (what your computer
+   outputs) and **Target Layout** (what you want to test-drive). Both accept a file.
+3. Choose a mode and a length in the nav bar; `@ punctuation` and `# numbers` weave real symbols and
+   capitals into the pool.
+4. Start typing. The board shows where your fingers should go; the caret waits for you.
+5. Finish the test for WPM, accuracy and a heatmap — or `Escape` to stop early.
+6. `Tab` `Enter` restarts at any time.
+
+---
+
+## Shortcuts
+
+| Keys | What it does |
+| --- | --- |
+| `Tab` `Enter` | Restart the current test |
+| `Escape` | End a running test early |
+| `Enter` | Start a fresh test from the result screen |
+| `Space` | Drill your mistakes from the result screen |
+| `Ctrl`/`Alt`/`⌘` + `Backspace` | Delete the whole word you are typing |
+| `Escape` / `Enter` | Leave the Settings or History page |
+
+Unmodified browser shortcuts still work — `F5`, `F12` and your window shortcuts are not swallowed;
+`Ctrl`+`Backspace` is the one combination Zorotype claims for itself.
+
+---
+
+## Development
+
+Requires Node 20 or newer (what Next.js 16 asks for).
 
 ```bash
 npm install
-npm run dev          # local dev server at http://localhost:3000
-npm test             # unit tests (Vitest)
-npm run typecheck    # tsc --noEmit
-npm run lint         # eslint
-npm run build        # static export into out/
-npm run build:pages  # export with the /zorotype basePath used on GitHub Pages
-npm run preview      # serve the exported out/ locally
-npm run themes:update # refresh the bundled Monkeytype theme palettes
+npm run dev            # dev server on http://localhost:3000
 ```
 
-Deployment: pushing to `main` runs `.github/workflows/deploy.yml` (test → build → deploy to Pages).
-One-time repo setting: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+| Script | Purpose |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` | Static export into `out/` |
+| `npm run build:pages` | Export with the `/zorotype` basePath used by the Pages mirror |
+| `npm run preview` | Serve the exported `out/` locally |
+| `npm test` | Unit tests (Vitest) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm run boards:update` | Regenerate the bundled keyboard library |
+| `npm run themes:update` | Refresh the bundled Monkeytype palettes |
 
-Canonical URLs, Open Graph tags, the social card and the sitemap all name
-`https://zorotype.vercel.app/` — one place to change it is `src/lib/seo.ts`. The Pages mirror
-keeps its own icons and manifest so it stays installable, while its canonical tags point
-search engines at the Vercel copy. The `og:image` is rendered at build time to `/og.png` from
-`src/app/og.png/route.tsx`, so the card can never drift from the app's own palette.
+### Tech
 
-`src/lib/seo.ts` also carries the entity graph the page publishes in JSON-LD: the app, its
-author (`Person`, linked to the portfolio and GitHub) and the company behind it
-(`Organization`, linked as publisher and copyright holder). Those are metadata only — nothing
-about them appears in the interface.
+Next.js 16 (App Router) with `output: "export"`, React 19, TypeScript (strict), Tailwind CSS v4 and
+Vitest. Everything runs client-side: no server, no database, no analytics.
 
----
+### How it is put together
 
-## ⌨️ Supported Keyboards
+```
+src/
+  app/            # layout (fonts, metadata, theme bootstrap), page, Tailwind theme
+  components/     # Header, SettingsMenu, TypingArea, Keyboard, BoardSvg, LayoutPreview,
+                  # HistoryPanel, StatsPanel and the modals/overlays
+  hooks/          # useEngine — subscribes React to the game store
+  lib/            # engine.ts (store + game logic), keyboard.ts, zmk.ts, layers.ts, scoring.ts,
+                  # dictionary.ts, languages.ts, hardware.ts, board-library.ts, storage.ts,
+                  # themes.ts + theme-data.ts, seo.ts
+public/           # manifest, service worker, icons
+scripts/          # generators for the board library and the theme palettes
+```
 
-* MoErgo Glove80  
-* MoErgo Go60  
-* Corne (42-key)  
-* ZSA Voyager  
-* Standard ANSI 60%  
+- **The game lives outside React.** `src/lib/engine.ts` is an external store; components subscribe
+  through `useSyncExternalStore`, so typing never re-mounts the tree.
+- **One renderer for the board.** The practice board and the Settings preview both draw through
+  `BoardSvg` — same geometry, same legends, one place to change them.
+- **Pure modules, tested.** ZMK parsing, layer resolution, keyboard geometry, scoring, input rules
+  and the themes each have Vitest coverage; the modals only mount while open, so none of that work
+  happens while you type.
 
----
+### Deployment
 
-### ⌨️ Keyboard Library & Custom Layouts
+`npm run build` produces a static `out/`. The canonical copy is
+**[zorotype.vercel.app](https://zorotype.vercel.app)**; the
+**[GitHub Pages mirror](https://shakilahmed0369.github.io/zorotype/)** is built with
+`npm run build:pages` for the `/zorotype` basePath.
 
-The Hardware row ships a **library of 86 keyboards** — Lily58, Sofle, Kyria, Iris, ErgoDox, Corne, Aurora variants, Planck, Preonic and more — so most users just pick their board and start typing. Anything else is one file away:
-
-- **Hardware → load file** — a keyboard layout definition (QMK `info.json` / Keymap Editor keyboard json). Hand-wired boards work this way.
-- **Source / Target Layout → load file** — a Keymap Editor style `.json` export, or your raw `.keymap` / `.dtsi` source.
-
-A board with no imported keymap starts from a **derived standard QWERTY** — a number row plus QWERTY / ASDF / ZXCV rows and Space on a thumb, worked out from the key geometry — so the on-screen keyboard is useful immediately. Importing your `.keymap` (or dragging keys) replaces it.
-
-Zorotype's built-in LayerForge AST Engine will:
-- Deep-parse ZMK behaviors (`&kp`, `&mt`, `&lt`, inline macros, `&trans`) and strip modifiers to find the base character  
-- Read **every layer** of a `.keymap` — thumb layer holds (`&mo`, `&sl`, `&to`) and layer-taps included — skip combos and macro definitions, and line each layer up with the board you loaded  
-- Redraw the on-screen keycaps for the layer your next key needs, and follow the layer a press came from, so the board matches the layer your hands are in (`&trans` keys inherit from the layer below)  
-- Turn layer, bluetooth and reset keys into inert labels so they never pollute your stats  
-- Allow you to drag-and-drop keys manually to tweak your matrix on the fly  
-
-No manual coding or manual mapping required. The bundled library data comes from [keymap-editor-contrib](https://github.com/nickcoutsos/keymap-editor-contrib) (ISC) and is regenerated with `npm run boards:update`.
-
----
-
-## 🕹️ How to Practice
-
-1. Select your **Hardware**, **Source OS Layout**, and **Target Layout** in the settings (⚙️)  
-2. Pick a mode in the nav test bar: **time** (15/30/60/120s), **words** (10/25/50/100), **news**, or **custom** — the same bar toggles **punctuation** and **numbers** and swaps the length buttons to match the mode
-3. Start typing. The UI will instantly fade into a distraction-free Focus Mode  
-4. Use the visual keyboard map if you forget where a key is located on your new layout  
-5. Finish the test to see your exact Net WPM, Accuracy, and a Heatmap of missed keys  
-6. Press `Enter` to instantly start a custom practice run targeting your specific mistakes  
-7. Use `Tab + Enter` at any time to quick-restart the session  
+SEO lives in `src/lib/seo.ts` — canonical origin, titles, description and the JSON-LD entity graph
+(the app, its author, and the company behind it) — so the origin appears exactly once. The social
+card is rendered at build time to `/og.png` from the app's own palette, and `robots.txt` plus
+`sitemap.xml` are exported alongside it.
 
 ---
 
-## ⚠️ Training Modes
+## Credits
 
-* **Words:** Practice raw muscle-memory with the standard English dictionary (10, 25, 50, or 100 words).  
-* **News:** Type real, live sentences fetched from NPR and NYT to practice natural punctuation and capitalization.  
-* **Custom:** Paste specific code snippets, books, or scripts to practice real-world typing scenarios.  
-* **Mistakes:** An algorithmically generated mode that forces you to drill the specific characters you just failed in the previous run.
+- **Word lists, themes and scoring conventions** come from [Monkeytype](https://monkeytype.com)
+  (GPL-3.0); the 187 palettes are regenerated with `npm run themes:update`.
+- **Keyboard library data** comes from
+  [keymap-editor-contrib](https://github.com/nickcoutsos/keymap-editor-contrib) (ISC).
+- **Fonts** — Lexend Deca, Poppins and Roboto Mono, served through `next/font`.
+
+<div align="center">
+
+Built by [algovar.com](https://algovar.com)
+
+</div>
