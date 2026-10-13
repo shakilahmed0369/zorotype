@@ -2,7 +2,7 @@ import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./d
 import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { registerCustomBoard, HARDWARE } from "./hardware";
-import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, pressedChar } from "./input-rules";
 import { buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor } from "./keyboard";
 import {
   LAYER_HOLD_MS,
@@ -148,9 +148,14 @@ export async function init(): Promise<void> {
   buildScriptLayouts(); // derive the arabic target layout for every board
 
   Object.assign(config, loadStoredConfig());
-  if (config.customBoard) registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard));
+  const restoredBoard = config.customBoard
+    ? registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard))
+    : null;
   if (!LANGUAGES[config.lang]) config.lang = "en";
   if (!GAME_MODES.includes(config.mode)) config.mode = "words";
+  // A saved hardware id can outlive the board it named — a library board whose data is gone, or a
+  // layout file imported by an older build — and nothing can draw a board that is not registered.
+  if (!HARDWARE[config.hw]) config.hw = restoredBoard ?? DEFAULT_CONFIG.hw;
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
   ui.history = loadHistory();
@@ -431,7 +436,8 @@ export async function setHardware(id: string): Promise<void> {
 
   const entry = BOARD_CATALOG.find((candidate) => candidate.id === id);
   if (!entry) {
-    setPref("hw", id as HardwareId);
+    // Neither registered nor in the library: nothing could draw it.
+    showToast(`Keyboard "${id}" is not available.`, true);
     return;
   }
 
@@ -956,7 +962,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
   } else if (pos) {
     const workingMap = targetMapForLayer(srcLayer);
     if (workingMap && workingMap[pos] !== undefined) {
-      mappedChar = keyLabelToChar(workingMap[pos], isUpperCase);
+      mappedChar = pressedChar(workingMap[pos], e.key, e.shiftKey, isUpperCase);
     }
   }
 

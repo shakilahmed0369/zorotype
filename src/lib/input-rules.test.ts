@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar, pressedChar } from "./input-rules";
+
+describe("pressedChar", () => {
+  it("takes a shifted symbol from what the OS delivered, not from the unshifted label", () => {
+    expect(pressedChar(";", ":", true, false)).toBe(":");
+    expect(pressedChar("1", "!", true, false)).toBe("!");
+    expect(pressedChar("9", "(", true, false)).toBe("(");
+    expect(pressedChar("'", '"', true, false)).toBe('"');
+    expect(pressedChar("=", "+", true, false)).toBe("+");
+  });
+
+  it("keeps letters label-driven, so a test-drive still follows the target layout", () => {
+    expect(pressedChar("Q", "Q", true, true)).toBe("Q");
+    expect(pressedChar("Q", "q", false, false)).toBe("q");
+    expect(pressedChar("A", "A", false, false)).toBe("a");
+  });
+
+  it("leaves unshifted symbols and behavior labels alone", () => {
+    expect(pressedChar(";", ";", false, false)).toBe(";");
+    expect(pressedChar("MO", "m", true, false)).toBe("MO");
+    expect(pressedChar("Lower", "l", true, false)).toBe("LOWER");
+    expect(pressedChar("SPACE", " ", true, false)).toBe(" ");
+  });
+
+  it("ignores a multi-character delivery", () => {
+    expect(pressedChar(";", "ArrowUp", true, false)).toBe(";");
+  });
+});
 
 describe("controlKey", () => {
   it("recognises every spelling of the keys that type nothing", () => {

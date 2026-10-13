@@ -8,7 +8,7 @@ export const SITE_NAME = "Zorotype";
 export const SITE_TITLE = "Zorotype — ZMK split keyboard typing trainer";
 export const SITE_H1 = "Zorotype — the typing trainer for split, ergonomic and matrix keyboards";
 export const SITE_DESCRIPTION =
-  "Practice typing on your split, ergonomic or matrix keyboard: ZMK layer-aware keycaps, 86 board layouts, Monkeytype-style WPM scoring. Free, no account.";
+  "Practice typing on your split, ergonomic or matrix keyboard: ZMK layer-aware keycaps, 87 board layouts, Monkeytype-style WPM scoring. Free, no account.";
 
 export const AUTHOR_NAME = "Shakil Ahmed";
 export const AUTHOR_HANDLE = "shakilahmed0369";

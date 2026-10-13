@@ -41,6 +41,17 @@ export function keyLabelToChar(label: string, isUpperCase: boolean): string {
   return upper; // multi-character labels (MO, LShift, …) never score
 }
 
+/**
+ * The character a press produces. A keycap label spells the unshifted character, so a shifted
+ * symbol — ":" for Shift+";", "!" for Shift+"1" — can only come from what the OS delivered; the
+ * label has no way to spell it. Letters stay label-driven, because the target layout decides which
+ * key types which letter.
+ */
+export function pressedChar(label: string, delivered: string, shift: boolean, isUpperCase: boolean): string {
+  const shiftedSymbol = shift && delivered.length === 1 && label.length === 1 && !/[a-z]/i.test(label);
+  return shiftedSymbol ? delivered : keyLabelToChar(label, isUpperCase);
+}
+
 // Ctrl/Alt/Cmd + Backspace: drop the word being typed, or just the space that was typed before
 // it, so the next keystroke retypes that word instead of finishing it.
 export function deletePreviousWord(typed: string): string {
