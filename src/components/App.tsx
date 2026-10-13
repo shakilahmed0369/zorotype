@@ -8,6 +8,7 @@ import { BoardModal } from "./BoardModal";
 import { CustomTextModal } from "./CustomTextModal";
 import { Header } from "./Header";
 import { HistoryPanel } from "./HistoryPanel";
+import { KeyboardButton } from "./KeyboardButton";
 import { SettingsMenu } from "./SettingsMenu";
 import { TabRestartOverlay } from "./TabRestartOverlay";
 import { ThemeModal } from "./ThemeModal";
@@ -62,6 +63,7 @@ export default function App() {
           {COMPANY_LABEL}
         </a>
       </footer>
+      {!ui.setupOpen && !ui.historyOpen && <KeyboardButton />}
       {ui.textModalOpen && <CustomTextModal />}
       {ui.themeModalOpen && <ThemeModal />}
       {ui.boardModalOpen && <BoardModal />}
