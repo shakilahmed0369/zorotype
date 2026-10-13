@@ -1,4 +1,5 @@
 import { HARDWARE, ZMK_EXCEPTIONS } from "./hardware";
+import { prettyLayerName } from "./layers";
 import type { BoardLayout, HardwareId, KeyGeo } from "./types";
 
 const MOD_MAP: Record<string, string> = {
@@ -55,52 +56,19 @@ export function extractZMKLabel(bind: unknown): string {
 export interface ParsedZmk {
   hw: HardwareId;
   map: Record<string, string>;
+  /** One position-aligned label map per layer, in file order (index 0 = base). */
+  layers: string[][];
+  /** Layer node names as the file spells them, e.g. ["default_layer", "lower_layer"]. */
+  names: string[];
+  /** Per layer: position -> index of the layer that key switches to. */
+  activators: Array<Record<string, number>>;
 }
 
-export function parseZmkJson(jsonString: string, currentHw: HardwareId): ParsedZmk {
-  const data = JSON.parse(jsonString);
-  let hw = currentHw;
-
-  if (data && data.keyboard) {
-    const kb = String(data.keyboard).toLowerCase();
-    (["glove80", "go60", "corne", "voyager"] as HardwareId[]).forEach((k) => {
-      if (kb.includes(k)) hw = k;
-    });
-  }
-
-  let firstLayer: unknown = null;
-  if (data && data.layers && data.layers.length > 0) firstLayer = data.layers[0];
-  else if (Array.isArray(data) && data.length > 0) firstLayer = data[0];
-  else if (data && data.bindings) firstLayer = data;
-
-  if (!firstLayer) {
-    throw new Error(
-      data && data.layouts
-        ? "That is a keyboard layout definition — load it on the Hardware row instead."
-        : "Could not find layer data in that file."
-    );
-  }
-
-  const layerRec = firstLayer as Record<string, unknown>;
-  let bindings: unknown = Array.isArray(firstLayer) ? firstLayer : layerRec.bindings || layerRec.keys || [];
-  if (!Array.isArray(bindings) || bindings.length === 0) {
-    if (data.keys && Array.isArray(data.keys)) bindings = data.keys;
-    else throw new Error("Layer has no bindings");
-  }
-
-  const limit = HARDWARE[hw].pos.length;
-  const map: Record<string, string> = {};
-  for (let i = 0; i < limit; i++) {
-    const label = extractZMKLabel((bindings as unknown[])[i]);
-    map[HARDWARE[hw].pos[i]] = ZMK_EXCEPTIONS[label] || label;
-  }
-
-  return { hw, map };
+interface RawLayer {
+  name: string;
+  /** Layer entries in board order: "&kp Q" strings, or JSON binding objects. */
+  entries: unknown[];
 }
-
-/* ==========================================================================
-   .keymap / .dtsi source files
-   ========================================================================== */
 
 // Behaviors that produce no character: layer switching, bluetooth, resets. Mapped to
 // inert multi-character labels so the engine leaves those keys out of scoring while the
@@ -122,53 +90,189 @@ const NON_CHARACTER_BEHAVIORS: Record<string, string> = {
   studio_unlock: "UNLOCK",
 };
 
+// Layer switching keeps its number in the activators table, so the board knows which key has
+// to be held for the layer it is about to draw.
+const LAYER_BEHAVIORS = new Set(["mo", "lt", "sl", "to", "tog"]);
+
+// A layer-tap types its tap key too, so only these carry nothing but the layer switch.
+const PURE_LAYER_BEHAVIORS = new Set(["mo", "to", "tog", "sl"]);
+
+// "&mo 1" and { behavior: "&mo", params: [{ value: "1" }] } both flatten to ["mo", "1"].
+function flatTokens(entry: unknown): string[] {
+  if (typeof entry === "string") {
+    return entry.replace(/^&/, "").trim().split(/[\s,]+/).filter(Boolean);
+  }
+  if (typeof entry !== "object" || entry === null) return [];
+  const rec = entry as Record<string, unknown>;
+  const head = String(rec.behavior || rec.command || rec.value || "");
+  const tokens = head ? head.replace(/^&/, "").trim().split(/[\s,]+/).filter(Boolean) : [];
+  if (Array.isArray(rec.params)) rec.params.forEach((param) => tokens.push(...flatTokens(param)));
+  return tokens;
+}
+
+/** The layer a binding switches to: `&mo 1` -> { mo, 1 }, `&lt 2 SPACE` -> { lt, 2 }. */
+export function layerTarget(entry: unknown): { kind: string; layer: number } | null {
+  const tokens = flatTokens(entry);
+  const kind = (tokens[0] ?? "").toLowerCase();
+  if (!LAYER_BEHAVIORS.has(kind)) return null;
+  const arg = tokens.slice(1).find((token) => /^\d+$/.test(token));
+  return arg === undefined ? null : { kind, layer: Number(arg) };
+}
+
+// One entry looks like "&mt LSHIFT A", "&kp LS(N1)" or an AST object. JSON exports and
+// .keymap source share this, so both imports label a key exactly the same way.
+function labelFromEntry(entry: unknown): string {
+  if (typeof entry === "object" && entry !== null) {
+    const rec = entry as Record<string, unknown>;
+    const decoration = rec.decoration as Record<string, unknown> | undefined;
+    if (decoration?.label) return String(decoration.label);
+    if (rec.label) return String(rec.label);
+  }
+
+  const tokens = flatTokens(entry);
+  if (tokens.length === 0) return "NONE";
+  const override = NON_CHARACTER_BEHAVIORS[tokens[0].toLowerCase()];
+  if (override) return override;
+  return extractZMKLabel(`&${tokens.join(" ")}`);
+}
+
+// Shared by both import paths: line every layer up with the board that is active right now.
+function buildLayerMaps(
+  hw: HardwareId,
+  rawLayers: RawLayer[]
+): Pick<ParsedZmk, "map" | "layers" | "names" | "activators"> {
+  const positions = HARDWARE[hw].pos;
+  const names = rawLayers.map((rawLayer, index) => prettyLayerName(rawLayer.name, index));
+  const layers: string[][] = [];
+  const activators: Array<Record<string, number>> = [];
+
+  rawLayers.forEach((rawLayer) => {
+    const labels: string[] = [];
+    const active: Record<string, number> = {};
+    positions.forEach((pos, index) => {
+      const entry = rawLayer.entries[index];
+      let label = entry === undefined ? "NONE" : labelFromEntry(entry);
+      const target = layerTarget(entry);
+      // A pure layer key is more useful named after the layer it opens than as "MO"/"TO".
+      if (target && PURE_LAYER_BEHAVIORS.has(target.kind) && names[target.layer]) label = names[target.layer];
+      labels.push(ZMK_EXCEPTIONS[label] || label);
+      if (target) active[pos] = target.layer;
+    });
+    layers.push(labels);
+    activators.push(active);
+  });
+
+  const map: Record<string, string> = {};
+  positions.forEach((pos, index) => {
+    map[pos] = layers[0][index];
+  });
+
+  return { map, layers, names, activators };
+}
+
+// JSON exports and Keymap Editor files list layers as arrays of entries; a few files carry a
+// single unnamed bindings list instead.
+function jsonRawLayers(data: unknown): RawLayer[] {
+  const record = (typeof data === "object" && data !== null ? data : {}) as Record<string, unknown>;
+  const list = Array.isArray(data) ? data : Array.isArray(record.layers) ? (record.layers as unknown[]) : null;
+
+  if (!list) {
+    const single = Array.isArray(record.bindings)
+      ? (record.bindings as unknown[])
+      : Array.isArray(record.keys)
+        ? (record.keys as unknown[])
+        : null;
+    return single ? [{ name: "", entries: single }] : [];
+  }
+
+  const names = Array.isArray(record.layer_names) ? record.layer_names.map(String) : [];
+  return list
+    .map((entry, index) => {
+      const layerRec =
+        !Array.isArray(entry) && typeof entry === "object" && entry !== null
+          ? (entry as Record<string, unknown>)
+          : null;
+      const entries = Array.isArray(entry)
+        ? entry
+        : Array.isArray(layerRec?.bindings)
+          ? (layerRec?.bindings as unknown[])
+          : Array.isArray(layerRec?.keys)
+            ? (layerRec?.keys as unknown[])
+            : [];
+      return { name: String(layerRec?.name ?? names[index] ?? ""), entries };
+    })
+    .filter((layer) => layer.entries.length > 0);
+}
+
+export function parseZmkJson(jsonString: string, currentHw: HardwareId): ParsedZmk {
+  const data = JSON.parse(jsonString) as Record<string, unknown> | unknown[];
+  let hw = currentHw;
+
+  const keyboard = !Array.isArray(data) ? data.keyboard : undefined;
+  if (keyboard) {
+    const kb = String(keyboard).toLowerCase();
+    (["glove80", "go60", "corne", "voyager"] as HardwareId[]).forEach((k) => {
+      if (kb.includes(k)) hw = k;
+    });
+  }
+
+  const rawLayers = jsonRawLayers(data);
+  if (rawLayers.length === 0) {
+    throw new Error(
+      !Array.isArray(data) && data.layouts
+        ? "That is a keyboard layout definition — load it on the Hardware row instead."
+        : "Could not find layer data in that file."
+    );
+  }
+
+  return { hw, ...buildLayerMaps(hw, rawLayers) };
+}
+
+/* ==========================================================================
+   .keymap / .dtsi source files
+   ========================================================================== */
+
 function stripComments(text: string): string {
   return text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
 }
 
-// One entry looks like "&mt LSHIFT A" or "&kp LS(N1)" - reuse the modifier-peeling
-// logic from the JSON path on a rebuilt binding string.
-function labelFromBinding(entry: string): string {
-  const tokens = entry
-    .replace(/^&/, "")
-    .trim()
-    .split(/[\s,]+/)
-    .filter(Boolean);
-  if (tokens.length === 0) return "NONE";
-
-  const override = NON_CHARACTER_BEHAVIORS[tokens[0].toLowerCase()];
-  if (override) return override;
-
-  return extractZMKLabel(`&${tokens.join(" ")}`);
-}
-
-// Combos and macros also use "bindings", so look for the first block inside the keymap node
-// (its compatible marker) rather than the first one in the file.
-function firstLayerBindings(text: string): string | null {
+// Combos and macros use "bindings" too, so every layer node is read from inside the keymap
+// node (its compatible marker) and each node name becomes that layer's name.
+function keymapLayerBlocks(text: string): RawLayer[] {
   const keymapMarker = text.search(/compatible\s*=\s*"zmk,keymap"/);
   const scoped = keymapMarker >= 0 ? text.slice(keymapMarker) : text;
-  const match = /bindings\s*=\s*<([\s\S]*?)>/.exec(scoped);
-  return match ? match[1] : null;
+
+  const node = /([A-Za-z_][\w-]*)\s*\{([^{}]*)\}/g;
+  const layers: RawLayer[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = node.exec(scoped)) !== null) {
+    const entries = bindingsEntries(match[2]);
+    if (entries.length > 0) layers.push({ name: match[1], entries });
+  }
+
+  // A bindings list pasted on its own (no layer node around it) is still one usable layer.
+  if (layers.length === 0) {
+    const entries = bindingsEntries(scoped);
+    if (entries.length > 0) layers.push({ name: "", entries });
+  }
+
+  return layers;
+}
+
+function bindingsEntries(body: string): string[] {
+  const block = /(?:^|[^\w-])bindings\s*=\s*<([\s\S]*?)>/.exec(body);
+  if (!block) return [];
+  return block[1]
+    .split("&")
+    .map((entry) => `&${entry.trim()}`)
+    .filter((entry) => entry.length > 1);
 }
 
 export function parseZmkKeymap(keymapText: string, currentHw: HardwareId): ParsedZmk {
-  const block = firstLayerBindings(stripComments(keymapText));
-  if (!block) throw new Error("No bindings block found in the keymap");
+  const layers = keymapLayerBlocks(stripComments(keymapText));
+  if (layers.length === 0) throw new Error("No bindings block found in the keymap");
 
-  const entries = block
-    .split("&")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  if (entries.length === 0) throw new Error("The first bindings block is empty");
-
-  const positions = HARDWARE[currentHw].pos;
-  const map: Record<string, string> = {};
-  for (let i = 0; i < positions.length; i++) {
-    const label = entries[i] ? labelFromBinding(entries[i]) : "NONE";
-    map[positions[i]] = ZMK_EXCEPTIONS[label] || label;
-  }
-
-  return { hw: currentHw, map };
+  return { hw: currentHw, ...buildLayerMaps(currentHw, layers) };
 }
 
 // Accepts either a ZMK JSON export or raw .keymap / .dtsi source.

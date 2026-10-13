@@ -37,6 +37,7 @@ Instead of making you guess where your keys are, it shows a live, interactive ma
 ## ✨ Key Highlights
 
 * **Visualize Your Split Keyboard:** Map your Glove80, Go60, Corne, or Voyager in QWERTY, Colemak-DH, Dvorak, or any custom layout.
+* **Layer-Aware Keycaps:** The firmware layer key never reaches the browser, so Zorotype infers the layer instead — it redraws the keycaps for the layer your next character needs, marks the thumb to hold, and follows the layer a press came from for a moment after you type it.
 * **Test Drive Before Flashing:** Practice any QWERTY alternative safely in your browser *before* flashing it to your keyboard's firmware.
 * **Monkeytype-Inspired Experience:** Train inside a clean, beautiful, and instantly familiar fluid interface.
 * **Training Discipline:** Monkeytype-style input rules — *normal*, *expert* (backspace locked) and *master* (frozen until the error is fixed) difficulties, stop-on-error for letters or words, and a blind mode that hides the on-screen keyboard once you want to prove the muscle memory unprompted. Difficulty is recorded on each result.
@@ -115,7 +116,8 @@ A board with no imported keymap starts from a **derived standard QWERTY** — a 
 
 Zorotype's built-in LayerForge AST Engine will:
 - Deep-parse ZMK behaviors (`&kp`, `&mt`, `&lt`, inline macros, `&trans`) and strip modifiers to find the base character  
-- Read the first layer of a `.keymap`, skip combos and macro definitions, and line the bindings up with the board you loaded  
+- Read **every layer** of a `.keymap` — thumb layer holds (`&mo`, `&sl`, `&to`) and layer-taps included — skip combos and macro definitions, and line each layer up with the board you loaded  
+- Redraw the on-screen keycaps for the layer your next key needs, and follow the layer a press came from, so the board matches the layer your hands are in (`&trans` keys inherit from the layer below)  
 - Turn layer, bluetooth and reset keys into inert labels so they never pollute your stats  
 - Allow you to drag-and-drop keys manually to tweak your matrix on the fly  
 

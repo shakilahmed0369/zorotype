@@ -240,7 +240,7 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Source Layout (OS)</span>
-              <span className={LABEL_DESC}>The physical layout your computer outputs — or upload a .json / .keymap</span>
+              <span className={LABEL_DESC}>The physical layout your computer outputs — upload a .json / .keymap (layers included)</span>
             </div>
             <div className={ACTION}>
               <label htmlFor="sourceJsonUpload" className={UPLOAD}>
@@ -270,7 +270,7 @@ export function SettingsMenu() {
           <div className={ROW}>
             <div className={LABEL_WRAP}>
               <span className={LABEL_TITLE}>Target Layout</span>
-              <span className={LABEL_DESC}>The visual layout you want to test drive — or upload a .json / .keymap</span>
+              <span className={LABEL_DESC}>The visual layout you want to test drive — upload a .json / .keymap (layers included)</span>
             </div>
             <div className={ACTION}>
               <label htmlFor="targetJsonUpload" className={UPLOAD}>
@@ -316,6 +316,12 @@ export function SettingsMenu() {
             desc="Display the interactive SVG keyboard"
             value={config.showKb}
             onChange={(v) => setPref("showKb", v)}
+          />
+          <PrefRow
+            title="Follow Layers"
+            desc="Redraw the keycaps for the layer your next key needs — uses the layers in your imported .keymap"
+            value={config.layerFollow}
+            onChange={(v) => setPref("layerFollow", v)}
           />
           <PrefRow
             title="Show Homerow"

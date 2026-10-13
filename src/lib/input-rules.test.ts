@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCharCorrect, isInputBlocked } from "./input-rules";
+import { deletePreviousWord, isCharCorrect, isInputBlocked } from "./input-rules";
 
 describe("isCharCorrect", () => {
   it("requires an exact match, so capitals need Shift", () => {
@@ -8,6 +8,23 @@ describe("isCharCorrect", () => {
     expect(isCharCorrect("a", "A")).toBe(false);
     expect(isCharCorrect("A", "a")).toBe(false);
     expect(isCharCorrect("a", undefined)).toBe(false);
+  });
+});
+
+describe("deletePreviousWord", () => {
+  it("clears the word being typed and keeps the space before it", () => {
+    expect(deletePreviousWord("the quick brow")).toBe("the quick ");
+    expect(deletePreviousWord("the quick ")).toBe("the quick");
+  });
+
+  it("takes a lone word back to the start of the line", () => {
+    expect(deletePreviousWord("quick")).toBe("");
+    expect(deletePreviousWord("")).toBe("");
+  });
+
+  it("treats runs of whitespace as the boundary", () => {
+    expect(deletePreviousWord("the   quick")).toBe("the   ");
+    expect(deletePreviousWord("the   ")).toBe("the");
   });
 });
 

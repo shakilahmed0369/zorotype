@@ -6,6 +6,13 @@ export function isCharCorrect(mappedChar: string, targetChar: string | undefined
   return targetChar !== undefined && mappedChar === targetChar;
 }
 
+// Ctrl/Alt/Cmd + Backspace: drop the word being typed, or just the space that was typed before
+// it, so the next keystroke retypes that word instead of finishing it.
+export function deletePreviousWord(typed: string): string {
+  if (/\s$/.test(typed)) return typed.replace(/\s+$/, "");
+  return typed.replace(/\S+$/, "");
+}
+
 function isLastCharWrong(typed: string, sample: string): boolean {
   if (typed.length === 0) return false;
   return !isCharCorrect(typed[typed.length - 1], sample[typed.length - 1]);

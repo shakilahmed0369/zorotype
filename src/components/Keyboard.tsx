@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { useEngine } from "@/hooks/useEngine";
-import { swapKeys } from "@/lib/engine";
-import { buildKeyRects, getMirroredMap, isHomerow } from "@/lib/keyboard";
+import { setPinnedLayer, swapKeys } from "@/lib/engine";
+import { buildKeyRects, getMirroredMap, isHomerow, mirrorPos } from "@/lib/keyboard";
 import { shortKeyLabel } from "@/lib/key-labels";
+import { activatorPositions, layerToMap, visibleLayer } from "@/lib/layers";
 import { getTheme, hexToRgb } from "@/lib/themes";
 
 const BRAILLE_BLANK = "\u2800";
@@ -40,7 +41,14 @@ export function Keyboard() {
   if (!config.showKb || config.blindMode || ui.setupOpen) return null;
 
   const statsActive = game.testCompleted;
-  const workingMap = config.mirror ? getMirroredMap(game.currentMap) : game.currentMap;
+  const stack = game.currentLayers;
+  const layer = visibleLayer(stack, ui);
+  const layerMap = stack ? layerToMap(stack, layer) : game.currentMap;
+  const workingMap = config.mirror ? getMirroredMap(layerMap) : layerMap;
+  // Layer keys on screen tell you which thumb to hold for the layer being drawn.
+  const holds = new Set(
+    stack && layer > 0 ? activatorPositions(stack, layer).map((pos) => (config.mirror ? mirrorPos(pos) : pos)) : []
+  );
 
   const nextChar = (game.sample[game.typed.length] || "").toUpperCase();
   const expectedPos = config.hints
@@ -58,7 +66,8 @@ export function Keyboard() {
   const heatPeak = hexToRgb(heatTheme.error);
 
   const startDrag = (e: ReactMouseEvent, pos: string) => {
-    if (statsActive || ui.setupOpen) return;
+    // Drag-remap edits the base layer only; upper layers are shown, not edited.
+    if (statsActive || ui.setupOpen || layer !== 0) return;
     const label = workingMap[pos];
     if (!label || label === BRAILLE_BLANK || label === "ø") return;
     dragPosRef.current = pos;
@@ -71,6 +80,25 @@ export function Keyboard() {
         statsActive ? "max-w-[800px]" : "max-w-[1050px]"
       }`}
     >
+      {stack && stack.names.length > 1 && !statsActive && (
+        <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
+          <span className="text-[10px] uppercase tracking-[1px] text-muted">Layer</span>
+          {stack.names.map((name, index) => (
+            <button
+              key={`${name}-${index}`}
+              onClick={() => setPinnedLayer(ui.pinnedLayer === index ? null : index)}
+              aria-pressed={layer === index}
+              title={`Peek at ${name}${ui.pinnedLayer === index ? " (pinned)" : ""}`}
+              className={`px-[10px] py-[3px] rounded-md text-[11px] font-bold font-[inherit] cursor-pointer transition-colors duration-200 border-none ${
+                layer === index ? "bg-accent text-bg" : "bg-key text-muted hover:text-correct"
+              } ${ui.pinnedLayer === index ? "ring-1 ring-accent" : ""}`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <svg
         viewBox={layout.viewBox}
         className="w-full h-auto overflow-visible block"
@@ -123,7 +151,7 @@ export function Keyboard() {
               <g
                 key={k.pos}
                 id={`key-${k.pos}`}
-                className="key-group cursor-grab"
+                className={`key-group ${layer === 0 ? "cursor-grab" : "cursor-default"}`}
                 transform={k.transform}
                 onMouseDown={(e) => startDrag(e, k.pos)}
               >
@@ -147,6 +175,18 @@ export function Keyboard() {
                 >
                   {displayLabel}
                 </text>
+                {holds.has(k.pos) && (
+                  <text
+                    x={k.w - 8}
+                    y={11}
+                    fontSize={11}
+                    textAnchor="end"
+                    dominantBaseline="central"
+                    className="fill-accent font-bold animate-pulse pointer-events-none"
+                  >
+                    ↑
+                  </text>
+                )}
               </g>
             );
           })}
@@ -154,9 +194,11 @@ export function Keyboard() {
 
       {!statsActive && (
         <div className="text-xs text-muted transition-opacity duration-300 opacity-60 mt-[15px]">
-          {Object.values(workingMap).some((value) => value)
-            ? "Drag keys to tweak target layout • Tab+Enter to restart"
-            : "No letters for this board — import your .keymap (Settings → Matrix & Layout) or pick a built-in board"}
+          {!Object.values(workingMap).some((value) => value)
+            ? "No letters for this board — import your .keymap (Settings → Matrix & Layout) or pick a built-in board"
+            : stack && stack.names.length > 1
+              ? `Showing ${stack.names[layer]} — the board follows the layer you type in • Tab+Enter to restart`
+              : "Drag keys to tweak target layout • Tab+Enter to restart"}
         </div>
       )}
 

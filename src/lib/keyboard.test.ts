@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { HARDWARE } from "./hardware";
-import { buildKeyRects, buildMap, buildScriptLayouts, currentTargetMap, getFingerName, getMirroredMap } from "./keyboard";
+import { buildKeyRects, buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getFingerName, getMirroredMap, sourceLayersFor } from "./keyboard";
 import { DEFAULT_CONFIG } from "./storage";
-import type { Config } from "./types";
+import type { Config, ImportedLayers } from "./types";
 
 const cfg = (over: Partial<Config> = {}): Config => ({ ...DEFAULT_CONFIG, ...over });
 
@@ -50,6 +50,38 @@ describe("currentTargetMap", () => {
     const dragged = { ...base, [HARDWARE.go60.pos[0]]: "X" };
     const map = currentTargetMap(cfg({ lang: "ar", tgt: "custom_dragged", draggedMap: dragged }));
     expect(map[HARDWARE.go60.pos[0]]).toBe("X");
+  });
+});
+
+describe("currentTargetLayers", () => {
+  const imported: ImportedLayers = {
+    names: ["Base", "Lower"],
+    maps: [["Q"], ["1"]],
+    activators: [{}, {}],
+  };
+
+  it("follows a default target back to the source import", () => {
+    expect(currentTargetLayers(cfg({ tgt: "default", sourceLayers: imported }))).toBe(imported);
+  });
+
+  it("uses the target import when the target is an imported layout", () => {
+    expect(currentTargetLayers(cfg({ tgt: "custom_json", targetLayers: imported }))).toBe(imported);
+    expect(currentTargetLayers(cfg({ tgt: "custom_json", sourceLayers: imported }))).toBeNull();
+  });
+
+  it("has no layers for built-in layouts, dragged maps and script targets", () => {
+    expect(currentTargetLayers(cfg({ tgt: "colemak-dh", sourceLayers: imported }))).toBeNull();
+    expect(currentTargetLayers(cfg({ tgt: "custom_dragged", sourceLayers: imported }))).toBeNull();
+    buildScriptLayouts();
+    expect(currentTargetLayers(cfg({ lang: "he", tgt: "default", sourceLayers: imported }))).toBeNull();
+  });
+});
+
+describe("sourceLayersFor", () => {
+  it("only offers layers for an imported source", () => {
+    const imported: ImportedLayers = { names: ["Base"], maps: [["Q"]], activators: [{}] };
+    expect(sourceLayersFor(cfg({ sourceKey: "custom_json", sourceLayers: imported }))).toBe(imported);
+    expect(sourceLayersFor(cfg({ sourceKey: "qwerty", sourceLayers: imported }))).toBeNull();
   });
 });
 

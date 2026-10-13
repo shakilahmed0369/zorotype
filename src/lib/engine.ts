@@ -2,8 +2,17 @@ import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./d
 import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { registerCustomBoard, HARDWARE } from "./hardware";
-import { isCharCorrect, isInputBlocked } from "./input-rules";
-import { buildMap, buildScriptLayouts, currentTargetMap, getMirroredMap, mirrorPos } from "./keyboard";
+import { deletePreviousWord, isCharCorrect, isInputBlocked } from "./input-rules";
+import { buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor } from "./keyboard";
+import {
+  LAYER_HOLD_MS,
+  buildLayerStack,
+  findChar,
+  layerToMap,
+  predictedLayer,
+  visibleLayer,
+  withLayerOverride,
+} from "./layers";
 import { LANGUAGES, langHasPhrases } from "./languages";
 import { applyTextModifiers } from "./modifiers";
 import { buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
@@ -20,6 +29,7 @@ import {
   saveResult,
 } from "./storage";
 import { parseKeyboardLayout, parseZmkLayout } from "./zmk";
+import type { ParsedZmk } from "./zmk";
 import { applyTheme, getTheme } from "./themes";
 import type { BoardLayout, Config, GameState, HardwareId, HistoryEntry, LanguageCode, UiState } from "./types";
 
@@ -57,6 +67,8 @@ const game: GameState = {
   sample: "",
   currentMap: {},
   sourceMap: {},
+  currentLayers: null,
+  sourceStack: null,
   testStarted: false,
   testCompleted: false,
   startTime: null,
@@ -85,6 +97,10 @@ const ui: UiState = {
   newsLoading: false,
   debugText: "debug info: ready...",
   keyFlash: null,
+  activeLayer: null,
+  pinnedLayer: null,
+  typedLayer: null,
+  typedLayerUntil: 0,
   heatmap: null,
   result: null,
   bestScores: [],
@@ -107,6 +123,7 @@ export function getUiState(): UiState {
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 let snapshotInterval: ReturnType<typeof setInterval> | null = null;
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+let layerTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /* ==========================================================================
    INITIALIZATION
@@ -155,6 +172,107 @@ export async function init(): Promise<void> {
 function refreshMaps(): void {
   game.currentMap = currentTargetMap(config);
   game.sourceMap = buildMap(config.hw, config.sourceKey, "source", config);
+  refreshLayerStacks();
+}
+
+/* ==========================================================================
+   LAYERS
+   The firmware layer key never reaches the browser, so the board is driven by inference:
+   the layer the next character needs, plus a short window after a press that shows the
+   layer the character came from. Everything below is inert for single-layer layouts.
+   ========================================================================== */
+
+function refreshLayerStacks(): void {
+  if (!config.layerFollow) {
+    game.currentLayers = null;
+    game.sourceStack = null;
+    ui.activeLayer = 0;
+    ui.pinnedLayer = null;
+    ui.typedLayer = null;
+    return;
+  }
+
+  const targetStack = buildLayerStack(config.hw, currentTargetLayers(config));
+  const withDrag =
+    targetStack && config.tgt === "custom_dragged" && config.draggedMap
+      ? withLayerOverride(targetStack, 0, config.draggedMap)
+      : targetStack;
+
+  game.currentLayers = withDrag;
+  // Presses are traced against what the computer outputs; without an imported source the
+  // target's own layers are the best available description of the board.
+  game.sourceStack = buildLayerStack(config.hw, sourceLayersFor(config)) ?? withDrag;
+
+  const available = game.currentLayers?.resolved.length ?? 1;
+  if (ui.activeLayer !== null && ui.activeLayer >= available) ui.activeLayer = 0;
+  if (ui.pinnedLayer !== null && ui.pinnedLayer >= available) ui.pinnedLayer = null;
+}
+
+/** Layer index the board is drawing right now. */
+function shownLayer(): number {
+  return visibleLayer(game.currentLayers, ui);
+}
+
+/** Layer the next sample character needs, so the board can show it before the press. */
+function updatePredictedLayer(): void {
+  if (!config.layerFollow) return;
+  const stack = game.currentLayers;
+  if (!stack) {
+    ui.activeLayer = 0;
+    return;
+  }
+  ui.activeLayer = predictedLayer(stack, game.sample[game.typed.length] ?? null, ui.activeLayer ?? 0);
+}
+
+// Drops the press layer and re-reads what the next character needs. The board is back on the
+// predicted layer immediately; this only clears the fallback.
+function scheduleLayerRevert(): void {
+  if (layerTimeout) clearTimeout(layerTimeout);
+  layerTimeout = setTimeout(() => {
+    layerTimeout = null;
+    ui.typedLayer = null;
+    updatePredictedLayer();
+    notify();
+  }, LAYER_HOLD_MS + 80);
+}
+
+/** Manual layer peek from the chips under the board. `null` hands control back to inference. */
+export function setPinnedLayer(layer: number | null): void {
+  const available = game.currentLayers?.resolved.length ?? 1;
+  ui.pinnedLayer = layer !== null && layer >= 0 && layer < available ? layer : null;
+  notify();
+}
+
+/** Position of a label: the drawn layer first, then the layers underneath it. */
+function posForLabel(layer: number, label: string): string | undefined {
+  const stack = game.currentLayers;
+  if (!stack) {
+    const map = config.mirror ? getMirroredMap(game.currentMap) : game.currentMap;
+    return Object.keys(map).find((p) => (map[p] || "").toUpperCase() === label);
+  }
+
+  const order = [layer, ...stack.resolved.map((_, index) => index).filter((index) => index !== layer)];
+  for (const target of order) {
+    const index = stack.resolved[target].findIndex((value) => (value || "").toUpperCase() === label);
+    if (index >= 0) {
+      const found = stack.pos[index];
+      return config.mirror ? mirrorPos(found) : found;
+    }
+  }
+  return undefined;
+}
+
+// The target map for the layer a press came from: a layered target is read on that layer, a flat
+// target keeps its base map, and anything else stays the character the computer delivered.
+function targetMapForLayer(srcLayer: number): Record<string, string> | null {
+  const stack = game.currentLayers;
+  if (stack) {
+    if (!stack.resolved[srcLayer]) return null;
+    const map = layerToMap(stack, srcLayer);
+    return config.mirror ? getMirroredMap(map) : map;
+  }
+  if (srcLayer !== 0) return null;
+  return config.mirror ? getMirroredMap(game.currentMap) : game.currentMap;
 }
 
 /* ==========================================================================
@@ -164,7 +282,7 @@ function refreshMaps(): void {
 export function setPref<K extends keyof Config>(key: K, val: Config[K]): void {
   config[key] = val;
   persistConfig(config);
-  if (key === "hw" || key === "tgt" || key === "sourceKey" || key === "mirror" || key === "homerow") {
+  if (key === "hw" || key === "tgt" || key === "sourceKey" || key === "mirror" || key === "homerow" || key === "layerFollow") {
     if (key === "hw") reapplyStoredKeymaps();
     refreshMaps();
   }
@@ -327,8 +445,13 @@ function reapplyStoredKeymaps(): boolean {
     if (!text) return;
     try {
       const parsed = parseZmkLayout(text, config.hw);
-      if (type === "source") config.sourceJsonMap = parsed.map;
-      else config.targetJsonMap = parsed.map;
+      if (type === "source") {
+        config.sourceJsonMap = parsed.map;
+        config.sourceLayers = importedLayersFrom(parsed);
+      } else {
+        config.targetJsonMap = parsed.map;
+        config.targetLayers = importedLayersFrom(parsed);
+      }
       reapplied = true;
     } catch {
       /* keep the previous map if the stored text no longer parses */
@@ -342,7 +465,7 @@ function reapplyStoredKeymaps(): boolean {
    ========================================================================== */
 
 export function applyLayoutFile(fileText: string, type: "source" | "target"): void {
-  let parsed: { hw: HardwareId; map: Record<string, string> };
+  let parsed: ParsedZmk;
   try {
     parsed = parseZmkLayout(fileText, config.hw);
   } catch (err) {
@@ -354,6 +477,7 @@ export function applyLayoutFile(fileText: string, type: "source" | "target"): vo
   config.hw = parsed.hw;
   if (type === "source") {
     config.sourceJsonMap = parsed.map;
+    config.sourceLayers = importedLayersFrom(parsed);
     config.sourceKey = "custom_json";
     config.sourceKeymapText = fileText;
     // A board with no built-in letters can only show the imported ones, so don't leave the
@@ -361,6 +485,7 @@ export function applyLayoutFile(fileText: string, type: "source" | "target"): vo
     if (!HARDWARE[config.hw].layouts[config.tgt]) config.tgt = "default";
   } else {
     config.targetJsonMap = parsed.map;
+    config.targetLayers = importedLayersFrom(parsed);
     config.tgt = "custom_json";
     config.targetKeymapText = fileText;
   }
@@ -368,7 +493,7 @@ export function applyLayoutFile(fileText: string, type: "source" | "target"): vo
   persistConfig(config);
   refreshMaps();
   notify();
-  showToast(`${type === "source" ? "Source" : "Target"} layout loaded!`);
+  showToast(`${type === "source" ? "Source" : "Target"} layout loaded — ${parsed.layers.length} layer${parsed.layers.length === 1 ? "" : "s"}!`);
 }
 
 /* ==========================================================================
@@ -529,8 +654,13 @@ export function setupNewTest(text: string, options: { raw?: boolean; modify?: bo
   ui.practiceResults = null;
   ui.historySummary = null;
   ui.keyFlash = null;
+  // A new test starts from the layer its first character needs.
+  ui.pinnedLayer = null;
+  ui.typedLayer = null;
+  ui.typedLayerUntil = 0;
 
   refreshMaps();
+  updatePredictedLayer();
 
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   notify();
@@ -563,6 +693,10 @@ export function endTest(earlyExit = false): void {
   stopSnapshots();
   stopTimer();
   ui.keyFlash = null;
+  // Nothing is being typed any more, so the results come back on the base layer.
+  ui.activeLayer = 0;
+  ui.pinnedLayer = null;
+  ui.typedLayer = null;
 
   const elapsedMs = Date.now() - (game.startTime ?? Date.now());
   const { wpm, raw, acc, timeSec } = evaluateTest({
@@ -669,7 +803,7 @@ export function swapKeys(sourcePos: string, targetPos: string): void {
   dragged[trg] = temp;
 
   persistConfig(config);
-  game.currentMap = currentTargetMap(config);
+  refreshMaps();
   notify();
 }
 
@@ -806,17 +940,32 @@ export function handleKeyDown(e: KeyboardEvent): void {
 
   let mappedChar = e.key;
   const sourceMap = game.sourceMap;
+  const now = Date.now();
 
-  const pos = Object.keys(sourceMap).find((p) => {
+  let pos = Object.keys(sourceMap).find((p) => {
     const s = (sourceMap[p] || "").toUpperCase();
     return s === osKey || s === e.key.toUpperCase() || s === OS_TO_ZMK[e.code];
   });
 
+  // A character only an upper layer can produce (a digit or symbol behind a thumb key) has no
+  // key in the base map, so it is traced through the imported stack. The layer it comes from
+  // is the only evidence of a held thumb the browser ever gets.
+  let srcLayer = 0;
+  if (!pos && game.sourceStack && e.key.length === 1) {
+    const traced = findChar(game.sourceStack, e.key, shownLayer());
+    if (traced) {
+      pos = traced.pos;
+      srcLayer = traced.layer;
+    }
+  }
+
   const isUpperCase = e.key === e.key.toUpperCase() && e.key !== e.key.toLowerCase();
 
   if (pos) {
-    const workingMap = config.mirror ? getMirroredMap(game.currentMap) : game.currentMap;
-    if (workingMap[pos] !== undefined) {
+    // A layered target is read on the same layer the press came from.
+    const workingMap = targetMapForLayer(srcLayer);
+
+    if (workingMap && workingMap[pos] !== undefined) {
       const rawVal = workingMap[pos].toUpperCase();
       mappedChar = rawVal;
       if (mappedChar === "SPACE" || mappedChar === "SPC") mappedChar = " ";
@@ -826,6 +975,14 @@ export function handleKeyDown(e: KeyboardEvent): void {
       else if (mappedChar === "TAB") mappedChar = "Tab";
       else if (mappedChar.length === 1) mappedChar = isUpperCase ? mappedChar : mappedChar.toLowerCase();
     }
+  }
+
+  if (config.layerFollow && game.sourceStack && srcLayer > 0) {
+    // Remember where the press came from: the board only needs it while the next character
+    // cannot be placed on any layer.
+    ui.typedLayer = srcLayer;
+    ui.typedLayerUntil = now + LAYER_HOLD_MS;
+    scheduleLayerRevert();
   }
 
   if (config.debug) {
@@ -871,7 +1028,10 @@ export function handleKeyDown(e: KeyboardEvent): void {
       notify();
       return;
     }
-    game.typed = game.typed.slice(0, -1);
+    // Ctrl/Alt/Cmd + Backspace cuts the whole word, the way the OS does.
+    game.typed =
+      e.ctrlKey || e.altKey || e.metaKey ? deletePreviousWord(game.typed) : game.typed.slice(0, -1);
+    updatePredictedLayer();
     notify();
     return;
   }
@@ -923,10 +1083,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
       pos && config.keypress && config.showKb ? { pos, kind: isCorrect ? "active" : "active-error" } : null;
 
     const expectedLabel = targetChar === " " ? "Space" : targetChar.toUpperCase();
-    const workingMapForFinger = config.mirror ? getMirroredMap(game.currentMap) : game.currentMap;
-    const expectedPos = Object.keys(workingMapForFinger).find(
-      (p) => (workingMapForFinger[p] || "").toUpperCase() === expectedLabel
-    );
+    const expectedPos = posForLabel(shownLayer(), expectedLabel);
 
     if (expectedPos) {
       if (!game.fingerHits[expectedPos]) game.fingerHits[expectedPos] = { correct: 0, total: 0 };
@@ -955,6 +1112,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
     if (game.typed.length === game.sample.length && game.sample.length > 0) {
       checkTestEnd();
     }
+    updatePredictedLayer();
   }
 
   notify();

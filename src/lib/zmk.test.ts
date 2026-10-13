@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HARDWARE } from "./hardware";
-import { extractZMKLabel, parseKeyboardLayout, parseZmkJson, parseZmkKeymap, parseZmkLayout } from "./zmk";
+import { extractZMKLabel, layerTarget, parseKeyboardLayout, parseZmkJson, parseZmkKeymap, parseZmkLayout } from "./zmk";
 
 describe("extractZMKLabel", () => {
   it("returns NONE for empty bindings", () => {
@@ -180,6 +180,147 @@ describe("parseZmkLayout", () => {
   it("routes JSON exports and .keymap source to the right parser", () => {
     expect(parseZmkLayout('{ "layers": [["&kp A"]] }', "corne").map[HARDWARE.corne.pos[0]]).toBe("A");
     expect(parseZmkLayout("bindings = <&kp B>;", "corne").map[HARDWARE.corne.pos[0]]).toBe("B");
+  });
+});
+
+describe("layerTarget", () => {
+  it("reads the layer out of layer behaviors", () => {
+    expect(layerTarget("&mo 1")).toEqual({ kind: "mo", layer: 1 });
+    expect(layerTarget("&lt 2 SPACE")).toEqual({ kind: "lt", layer: 2 });
+    expect(layerTarget("&to 3")).toEqual({ kind: "to", layer: 3 });
+    expect(layerTarget("&tog 1")).toEqual({ kind: "tog", layer: 1 });
+    expect(layerTarget({ behavior: "&mo", params: [{ value: "2" }] })).toEqual({ kind: "mo", layer: 2 });
+  });
+
+  it("ignores keys that are not layer switches", () => {
+    expect(layerTarget("&kp A")).toBeNull();
+    expect(layerTarget("&mo")).toBeNull();
+    expect(layerTarget("&mt LCTRL A")).toBeNull();
+    expect(layerTarget(null)).toBeNull();
+  });
+});
+
+describe("parseZmkKeymap layers", () => {
+  const keymap = `
+    / {
+      keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+          bindings = <&kp Q &kp W &kp E &mo 1>;
+        };
+
+        lower_layer {
+          bindings = <&kp N1 &kp N2 &trans &kp A>;
+        };
+
+        raise_layer {
+          bindings = <&trans &kp EXCL &kp LBKT &kp B>;
+        };
+      };
+    };
+  `;
+
+  it("keeps every layer instead of stopping at the first", () => {
+    const parsed = parseZmkKeymap(keymap, "corne");
+    const pos = HARDWARE.corne.pos;
+    expect(parsed.layers).toHaveLength(3);
+    expect(parsed.names).toEqual(["Base", "Lower", "Raise"]);
+
+    expect(parsed.layers[0][0]).toBe("Q");
+    expect(parsed.layers[1][0]).toBe("1");
+    expect(parsed.layers[1][2]).toBe("NONE"); // &trans
+    expect(parsed.layers[2][1]).toBe("!");
+    expect(parsed.layers[2][2]).toBe("[");
+    expect(parsed.layers[0]).toHaveLength(pos.length);
+
+    // The flat map stays the base layer, so nothing that reads it changes behaviour.
+    expect(parsed.map).toEqual(Object.fromEntries(pos.map((p, i) => [p, parsed.layers[0][i]])));
+  });
+
+  it("records which key opens which layer", () => {
+    const parsed = parseZmkKeymap(keymap, "corne");
+    const pos = HARDWARE.corne.pos;
+    expect(parsed.activators[0]).toEqual({ [pos[3]]: 1 });
+    expect(parsed.activators[1]).toEqual({});
+  });
+
+  it("names a pure layer key after the layer it opens", () => {
+    const parsed = parseZmkKeymap(keymap, "corne");
+    expect(parsed.layers[0][3]).toBe("Lower");
+  });
+
+  it("leaves a layer-tap named after what it types", () => {
+    const parsed = parseZmkKeymap("bindings = <&lt 1 SPACE &kp A>;", "corne");
+    expect(parsed.layers[0][0]).toBe("Space");
+    expect(parsed.activators[0][HARDWARE.corne.pos[0]]).toBe(1);
+  });
+
+  it("keeps the inert label when the layer is out of range", () => {
+    const parsed = parseZmkKeymap("bindings = <&mo 4>;", "corne");
+    expect(parsed.map[HARDWARE.corne.pos[0]]).toBe("MO");
+  });
+});
+
+describe("parseZmkJson layers", () => {
+  it("reads every layer of a JSON export", () => {
+    const parsed = parseZmkJson(
+      JSON.stringify({
+        keyboard: "Corne",
+        layer_names: ["base", "lower", "raise"],
+        layers: [
+          ["&kp Q", "&kp W", "&mo 1"],
+          ["&kp N1", "&mo 2", "&kp A"],
+          ["&kp EXCL", "&trans", "&kp B"],
+        ],
+      }),
+      "go60"
+    );
+    const pos = HARDWARE.corne.pos;
+    expect(parsed.hw).toBe("corne");
+    expect(parsed.layers).toHaveLength(3);
+    expect(parsed.names).toEqual(["Base", "Lower", "Raise"]);
+    expect(parsed.layers[1][0]).toBe("1");
+    expect(parsed.layers[2][0]).toBe("!");
+    expect(parsed.activators[1][pos[1]]).toBe(2);
+    expect(parsed.map[pos[0]]).toBe("Q");
+  });
+
+  it("reads Keymap Editor style layers with names", () => {
+    const parsed = parseZmkJson(
+      JSON.stringify({
+        layers: [
+          {
+            name: "Base",
+            bindings: [
+              { behavior: "&kp", params: [{ value: "Q" }] },
+              { behavior: "&mo", params: [{ value: "1" }] },
+            ],
+          },
+          {
+            name: "Lower",
+            bindings: [
+              { behavior: "&kp", params: [{ value: "N1" }] },
+              { behavior: "&trans", params: [] },
+            ],
+          },
+        ],
+      }),
+      "corne"
+    );
+    const pos = HARDWARE.corne.pos;
+    expect(parsed.names).toEqual(["Base", "Lower"]);
+    expect(parsed.layers[0][0]).toBe("Q");
+    expect(parsed.layers[0][1]).toBe("Lower");
+    expect(parsed.layers[1][0]).toBe("1");
+    expect(parsed.layers[1][1]).toBe("NONE");
+    expect(parsed.activators[0][pos[1]]).toBe(1);
+  });
+
+  it("keeps a single unnamed bindings list as one layer", () => {
+    const parsed = parseZmkJson(JSON.stringify({ keys: ["&kp A", "&kp B"] }), "corne");
+    expect(parsed.layers).toEqual([["A", "B", ...HARDWARE.corne.pos.slice(2).map(() => "NONE")]]);
+    expect(parsed.names).toEqual(["Base"]);
   });
 });
 

@@ -31,6 +31,9 @@ export const DEFAULT_CONFIG: Config = {
   sourceJsonMap: null,
   targetJsonMap: null,
   draggedMap: null,
+  sourceLayers: null,
+  targetLayers: null,
+  layerFollow: true,
   sourceKeymapText: null,
   targetKeymapText: null,
 };

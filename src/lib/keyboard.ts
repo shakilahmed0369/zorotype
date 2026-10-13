@@ -1,6 +1,7 @@
 import { HARDWARE } from "./hardware";
 import { LANGUAGES, SCRIPT_MAPS } from "./languages";
-import type { Config, HardwareId, KeyGeo } from "./types";
+import type { ParsedZmk } from "./zmk";
+import type { Config, HardwareId, ImportedLayers, KeyGeo } from "./types";
 
 // Derive script-based target layouts (hebrew, arabic) for every board from its qwerty layout,
 // so pressing a physical key produces the correct letter (blind typing of that script).
@@ -62,6 +63,28 @@ export function currentTargetMap(config: Config): Record<string, string> {
     return buildMap(config.hw, script, "target", config);
   }
   return buildMap(config.hw, config.tgt, "target", config);
+}
+
+// Imported keymaps carry every layer; keep them together so the board can show the one in use.
+export function importedLayersFrom(parsed: ParsedZmk): ImportedLayers {
+  return { names: parsed.names, maps: parsed.layers, activators: parsed.activators };
+}
+
+// Layer data for the effective target, mirroring currentTargetMap's fallbacks: a default target
+// is the source import, a built-in layout has a single layer, and a dragged map only edits base.
+export function currentTargetLayers(config: Config): ImportedLayers | null {
+  const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
+  if ((script === "hebrew" || script === "arabic") && config.tgt !== "custom_dragged" && config.tgt !== "custom_json") {
+    return null; // the generated script layout stands in for the target and has no layers
+  }
+  if (config.tgt === "default") return config.sourceLayers;
+  if (config.tgt === "custom_json") return config.targetLayers;
+  return null;
+}
+
+// The layers of what the computer actually outputs, which is what a press can be traced back to.
+export function sourceLayersFor(config: Config): ImportedLayers | null {
+  return config.sourceKey === "custom_json" ? config.sourceLayers : null;
 }
 
 export function mirrorPos(pos: string): string {

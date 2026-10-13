@@ -39,6 +39,25 @@ export interface BoardLayout {
   origin: "file" | "library";
 }
 
+// A keymap import that carries every layer of the file it came from: the board shows one
+// layer at a time, so the labels have to be kept per layer rather than flattened.
+export interface ImportedLayers {
+  names: string[];
+  /** One position-aligned label map per layer, in file order (index 0 = base). */
+  maps: string[][];
+  /** Per layer: position -> index of the layer that key switches to (layer holds, `&mo` …). */
+  activators: Array<Record<string, number>>;
+}
+
+/** An imported stack whose transparency (`&trans` / `&none`) has been resolved once. */
+export interface LayerStack {
+  pos: string[];
+  names: string[];
+  raw: string[][];
+  resolved: string[][];
+  activators: Array<Record<string, number>>;
+}
+
 export interface LanguageDef {
   name: string;
   dir: "ltr" | "rtl";
@@ -74,6 +93,10 @@ export interface Config {
   sourceJsonMap: Record<string, string> | null;
   targetJsonMap: Record<string, string> | null;
   draggedMap: Record<string, string> | null;
+  // Every layer of an imported keymap, so the on-screen board can follow the layer in use.
+  sourceLayers: ImportedLayers | null;
+  targetLayers: ImportedLayers | null;
+  layerFollow: boolean;
   // Raw imported keymap files, kept so they can be re-parsed when the board changes.
   sourceKeymapText: string | null;
   targetKeymapText: string | null;
@@ -96,6 +119,8 @@ export interface GameState {
   sample: string;
   currentMap: Record<string, string>;
   sourceMap: Record<string, string>;
+  currentLayers: LayerStack | null;
+  sourceStack: LayerStack | null;
   testStarted: boolean;
   testCompleted: boolean;
   startTime: number | null;
@@ -157,6 +182,13 @@ export interface UiState {
   newsLoading: boolean;
   debugText: string;
   keyFlash: { pos: string; kind: "active" | "active-error" } | null;
+  // Layer the board is drawing (0 = base). `activeLayer` is the layer the next character needs
+  // (null = nothing to go on), `pinnedLayer` the manual chip override, `typedLayer` the layer
+  // the last press came from until `typedLayerUntil`.
+  activeLayer: number | null;
+  pinnedLayer: number | null;
+  typedLayer: number | null;
+  typedLayerUntil: number;
   heatmap: Record<string, number> | null;
   result: TestResult | null;
   bestScores: HistoryEntry[];
