@@ -6,6 +6,41 @@ export function isCharCorrect(mappedChar: string, targetChar: string | undefined
   return targetChar !== undefined && mappedChar === targetChar;
 }
 
+// Labels for the keys that do not type a character, plus the space bar. Keymaps spell these in
+// several ways, and the board's built-in layouts use the short "Backsp".
+const CONTROL_KEYS: Record<string, string> = {
+  BSPC: "Backspace",
+  BACKSPACE: "Backspace",
+  BACKSP: "Backspace",
+  BKSP: "Backspace",
+  BACK_SPACE: "Backspace",
+  RET: "Enter",
+  ENTER: "Enter",
+  RETURN: "Enter",
+  ESC: "Escape",
+  ESCAPE: "Escape",
+  TAB: "Tab",
+  SPACE: " ",
+  SPC: " ",
+};
+
+// A press is read from the label at the pressed position, never from the target layout's label:
+// test-driving a layout must not turn Backspace into whatever character happens to sit there.
+export function controlKey(label: string | null | undefined): string | null {
+  if (!label) return null;
+  return CONTROL_KEYS[label.trim().toUpperCase().replace(/^&/, "")] ?? null;
+}
+
+// The character a target-layout label types at a position — the same rule for every keycap,
+// with capitals following the Shift state of the press.
+export function keyLabelToChar(label: string, isUpperCase: boolean): string {
+  const control = controlKey(label);
+  if (control !== null) return control;
+  const upper = (label || "").toUpperCase();
+  if (upper.length === 1) return isUpperCase ? upper : upper.toLowerCase();
+  return upper; // multi-character labels (MO, LShift, …) never score
+}
+
 // Ctrl/Alt/Cmd + Backspace: drop the word being typed, or just the space that was typed before
 // it, so the next keystroke retypes that word instead of finishing it.
 export function deletePreviousWord(typed: string): string {

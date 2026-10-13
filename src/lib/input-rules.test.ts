@@ -1,5 +1,48 @@
 import { describe, expect, it } from "vitest";
-import { deletePreviousWord, isCharCorrect, isInputBlocked } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar } from "./input-rules";
+
+describe("controlKey", () => {
+  it("recognises every spelling of the keys that type nothing", () => {
+    expect(controlKey("BSPC")).toBe("Backspace");
+    expect(controlKey("Backspace")).toBe("Backspace");
+    expect(controlKey("Backsp")).toBe("Backspace"); // the built-in boards' short label
+    expect(controlKey("RET")).toBe("Enter");
+    expect(controlKey("Enter")).toBe("Enter");
+    expect(controlKey("ESC")).toBe("Escape");
+    expect(controlKey("Tab")).toBe("Tab");
+    expect(controlKey("Space")).toBe(" ");
+  });
+
+  it("leaves characters and behavior labels alone", () => {
+    expect(controlKey("A")).toBeNull();
+    expect(controlKey(";")).toBeNull();
+    expect(controlKey("MO")).toBeNull();
+    expect(controlKey("Lower")).toBeNull();
+    expect(controlKey("")).toBeNull();
+    expect(controlKey(null)).toBeNull();
+    expect(controlKey("ArrowUp")).toBeNull();
+  });
+});
+
+describe("keyLabelToChar", () => {
+  it("reads control labels as their key, not as a character", () => {
+    expect(keyLabelToChar("Backsp", false)).toBe("Backspace");
+    expect(keyLabelToChar("RET", false)).toBe("Enter");
+    expect(keyLabelToChar("SPC", false)).toBe(" ");
+  });
+
+  it("follows the Shift state for single characters", () => {
+    expect(keyLabelToChar("a", false)).toBe("a");
+    expect(keyLabelToChar("A", true)).toBe("A");
+    expect(keyLabelToChar("a", true)).toBe("A");
+    expect(keyLabelToChar("4", false)).toBe("4");
+  });
+
+  it("keeps multi-character labels inert", () => {
+    expect(keyLabelToChar("MO", false)).toBe("MO");
+    expect(keyLabelToChar("LShift", false)).toBe("LSHIFT");
+  });
+});
 
 describe("isCharCorrect", () => {
   it("requires an exact match, so capitals need Shift", () => {

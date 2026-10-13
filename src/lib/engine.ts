@@ -2,7 +2,7 @@ import { fetchNewsText, loadDictionary, loadLangDictionary, wordPool } from "./d
 import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { registerCustomBoard, HARDWARE } from "./hardware";
-import { deletePreviousWord, isCharCorrect, isInputBlocked } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar } from "./input-rules";
 import { buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor } from "./keyboard";
 import {
   LAYER_HOLD_MS,
@@ -917,7 +917,7 @@ function flashKey(pos: string | undefined, kind: "active" | "active-error" = "ac
 }
 
 export function handleKeyDown(e: KeyboardEvent): void {
-  if (ui.textModalOpen || ui.themeModalOpen || ui.boardModalOpen || e.repeat) return;
+  if (ui.textModalOpen || ui.themeModalOpen || ui.boardModalOpen) return;
 
   // 1. Settings Exit Interception
   if (ui.setupOpen) {
@@ -961,21 +961,22 @@ export function handleKeyDown(e: KeyboardEvent): void {
 
   const isUpperCase = e.key === e.key.toUpperCase() && e.key !== e.key.toLowerCase();
 
-  if (pos) {
-    // A layered target is read on the same layer the press came from.
+  // Control keys are read from the key that was pressed (and from the event itself as a
+  // fallback), never from the target layout: a test-drive remap must not turn Backspace or the
+  // space bar into whatever character happens to sit at that position.
+  const control = controlKey(pos ? sourceMap[pos] : null) ?? controlKey(e.key);
+  if (control !== null) {
+    mappedChar = control;
+  } else if (pos) {
     const workingMap = targetMapForLayer(srcLayer);
-
     if (workingMap && workingMap[pos] !== undefined) {
-      const rawVal = workingMap[pos].toUpperCase();
-      mappedChar = rawVal;
-      if (mappedChar === "SPACE" || mappedChar === "SPC") mappedChar = " ";
-      else if (mappedChar === "RET" || mappedChar === "ENTER") mappedChar = "Enter";
-      else if (mappedChar === "ESC" || mappedChar === "ESCAPE") mappedChar = "Escape";
-      else if (mappedChar === "BSPC" || mappedChar === "BACKSPACE") mappedChar = "Backspace";
-      else if (mappedChar === "TAB") mappedChar = "Tab";
-      else if (mappedChar.length === 1) mappedChar = isUpperCase ? mappedChar : mappedChar.toLowerCase();
+      mappedChar = keyLabelToChar(workingMap[pos], isUpperCase);
     }
   }
+
+  // The browser repeats a held key. That is what Backspace is for — you hold it to clear a word —
+  // but a repeated letter would only spam mistakes, so everything else ignores the repeats.
+  if (e.repeat && mappedChar !== "Backspace") return;
 
   if (config.layerFollow && game.sourceStack && srcLayer > 0) {
     // Remember where the press came from: the board only needs it while the next character
@@ -1119,9 +1120,16 @@ export function handleKeyDown(e: KeyboardEvent): void {
 }
 
 export function handleKeyUp(e: KeyboardEvent): void {
-  if (e.key === "Tab") {
+  let changed = false;
+  if (e.key === "Tab" && game.tabActive) {
     game.tabActive = false;
+    changed = true;
   }
-  ui.keyFlash = null;
-  notify();
+  if (ui.keyFlash) {
+    ui.keyFlash = null;
+    changed = true;
+  }
+  // Only redraw when something actually ended: this used to re-render the whole board on every
+  // key release, which doubled the work of fast typing for no visible change.
+  if (changed) notify();
 }
