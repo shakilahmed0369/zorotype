@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Poppins, Roboto_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   AUTHOR_NAME,
   COMPANY_NAME,
@@ -119,6 +120,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
         />
         {children}
+        {/* Speed Insights reports to Vercel's own infrastructure, so only the Vercel build renders
+            it — on the GitHub Pages mirror the script URL would just 404 and log an error. */}
+        {process.env.VERCEL ? <SpeedInsights /> : null}
       </body>
     </html>
   );
