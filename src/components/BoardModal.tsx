@@ -60,6 +60,11 @@ export function BoardModal() {
       onKeyDown={(e) => {
         if (e.key === "Escape") closeBoardModal();
       }}
+      // Only a press that starts on the backdrop dismisses: releasing a drag from inside the panel
+      // out here reports the backdrop as the click target too.
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) closeBoardModal();
+      }}
       className="fixed inset-0 bg-black/80 flex justify-center items-center z-[2100]"
     >
       <div className="bg-key p-[30px] rounded-xl w-[90%] max-w-[620px] flex flex-col max-h-[85vh]">

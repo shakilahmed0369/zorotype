@@ -13,7 +13,14 @@ export function CustomTextModal() {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-[2000]">
+    <div
+      // Only a press that starts on the backdrop dismisses: releasing a drag from inside the panel
+      // out here reports the backdrop as the click target too.
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) closeTextModal();
+      }}
+      className="fixed inset-0 bg-black/80 flex justify-center items-center z-[2000]"
+    >
       <div className="bg-key p-[30px] rounded-xl w-4/5 max-w-[600px]">
         <h2 className="mt-0 text-[20px] text-accent font-bold">Custom Text</h2>
         <textarea
