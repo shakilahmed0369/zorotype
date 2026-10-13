@@ -11,6 +11,7 @@ import { HistoryPanel } from "./HistoryPanel";
 import { KeyboardButton } from "./KeyboardButton";
 import { SettingsMenu } from "./SettingsMenu";
 import { TabRestartOverlay } from "./TabRestartOverlay";
+import { ThemeButton } from "./ThemeButton";
 import { ThemeModal } from "./ThemeModal";
 import { Toast } from "./Toast";
 import { TypingArea } from "./TypingArea";
@@ -63,7 +64,12 @@ export default function App() {
           {COMPANY_LABEL}
         </a>
       </footer>
-      {!ui.setupOpen && !ui.historyOpen && <KeyboardButton />}
+      {!ui.setupOpen && !ui.historyOpen && (
+        <div className="fixed bottom-[30px] right-[30px] z-[900] flex items-center gap-[10px]">
+          <ThemeButton />
+          <KeyboardButton />
+        </div>
+      )}
       {ui.textModalOpen && <CustomTextModal />}
       {ui.themeModalOpen && <ThemeModal />}
       {ui.boardModalOpen && <BoardModal />}
