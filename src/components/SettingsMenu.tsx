@@ -17,9 +17,9 @@ const LABEL_TITLE = "text-sm text-correct font-bold";
 const LABEL_DESC = "text-[11px] text-muted";
 const ACTION = "flex gap-[10px] items-center";
 const SELECT =
-  "bg-bg text-muted font-[inherit] text-[13px] cursor-pointer px-3 py-[6px] rounded-md border-none outline-none transition-colors duration-300 hover:text-correct";
+  "bg-bg text-muted font-[inherit] text-[12px] cursor-pointer px-3 h-8 rounded-lg border-none outline-none transition-colors duration-300 hover:text-correct";
 const UPLOAD =
-  "bg-bg text-correct px-3 py-[6px] rounded-md text-[11px] cursor-pointer text-center transition-all duration-300 border-none font-[inherit] font-bold hover:text-accent";
+  "bg-bg text-correct h-8 inline-flex items-center justify-center px-3 rounded-lg text-[12px] cursor-pointer text-center transition-all duration-300 border-none font-[inherit] font-bold hover:text-accent";
 const OPTION = "bg-bg text-correct";
 const LAYOUTS = ["qwerty", "colemak-dh", "dvorak"];
 

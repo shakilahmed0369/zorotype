@@ -32,7 +32,7 @@ function FingerStats({ fingerHits, hw }: { fingerHits: Record<string, FingerHit>
         const acc = d.total > 0 ? Math.round((d.correct / d.total) * 100) : 100;
         const color = acc >= 95 ? "text-correct" : acc >= 80 ? "text-accent" : "text-error";
         return (
-          <div key={f} className="flex items-center gap-[6px] px-[10px] py-1 rounded-md bg-key border border-edge">
+          <div key={f} className="flex items-center gap-[6px] px-[10px] py-1 rounded-md bg-key">
             <div className="text-[11px] text-muted uppercase">{f}</div>
             <div className={`text-base font-bold ${color}`}>{acc}%</div>
           </div>

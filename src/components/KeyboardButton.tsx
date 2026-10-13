@@ -16,7 +16,7 @@ export function KeyboardButton() {
       onClick={openBoardModal}
       title="Keyboard — browse every board and preview one"
       aria-label={`Keyboard: ${name}`}
-      className="flex items-center gap-2 max-w-[220px] bg-key text-muted font-[inherit] text-[13px] px-3 py-2 rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-colors duration-300 hover:text-accent"
+      className="flex items-center gap-2 max-w-[220px] h-9 bg-key text-muted font-[inherit] text-[13px] px-3 rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-colors duration-300 hover:text-accent"
     >
       <svg viewBox="0 0 24 24" className="w-4 h-4 block shrink-0" fill="currentColor" aria-hidden="true">
         <path

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/* Scrollbars are part of the surface, so they follow the palette instead of the OS: thin, with a
+   muted thumb that reads on both the page and the bg-key panels, on every theme. The page also
+   keeps a stable gutter, because opening Settings or History makes it scroll and the layout would
+   otherwise shift sideways by the width of the scrollbar. */
+@layer base {
+  /* scrollbar-width does not inherit, so every scroll container has to opt in. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-muted) 50%, transparent) transparent;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
 @theme {
   --color-bg: #212830;
   --color-accent: #41ce5c;

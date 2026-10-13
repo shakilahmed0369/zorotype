@@ -16,7 +16,7 @@ export function ThemeButton() {
       onClick={openThemeModal}
       title="Theme — pick from every palette"
       aria-label={`Theme: ${theme.name}`}
-      className="flex items-center px-3 py-[11px] bg-key rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-[1.06]"
+      className="flex items-center h-9 px-3 bg-key rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-[1.06]"
     >
       <span className="flex gap-1">
         {[theme.main, theme.subAlt, theme.text, theme.error].map((color, i) => (

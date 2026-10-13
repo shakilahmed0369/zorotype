@@ -33,18 +33,18 @@ export function ThemeModal() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${listThemes().length} themes...`}
-            className="flex-1 min-w-0 bg-edge text-correct border-2 border-muted px-3 py-2 rounded-lg font-[inherit] text-sm outline-none transition-all duration-200 focus:border-accent"
+            className="flex-1 min-w-0 h-10 bg-edge text-correct border-2 border-muted px-3 rounded-lg font-[inherit] text-sm outline-none transition-all duration-200 focus:border-accent"
           />
           <button
             onClick={closeThemeModal}
-            className="bg-transparent text-muted font-[inherit] text-[13px] cursor-pointer px-2 py-1 rounded-md transition-colors duration-300 outline-none hover:text-correct border border-solid border-muted"
+            className="h-10 bg-transparent text-muted font-[inherit] text-[13px] cursor-pointer px-3 rounded-lg transition-colors duration-300 outline-none hover:text-correct border-2 border-muted"
           >
             Close
           </button>
         </div>
 
         {themes.length > 0 ? (
-          <div className="overflow-y-auto grid gap-2 pr-2 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
+          <div className="overflow-y-auto [scrollbar-gutter:stable_both-edges] grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
             {themes.map((t) => {
               const active = t.name === config.theme;
               return (

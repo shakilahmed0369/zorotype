@@ -7,7 +7,7 @@ const SECTION_TITLE = "text-xs text-muted uppercase tracking-[1px] mb-[10px] pl-
 const ROW = "flex justify-between items-center gap-[15px] px-5 py-[10px] border-b-2 border-bg last:border-b-0 text-correct text-sm";
 const META = "text-muted text-xs flex flex-wrap items-center justify-end gap-[15px]";
 const PAGER =
-  "bg-bg text-correct px-3 py-[6px] rounded-md text-[11px] font-[inherit] font-bold cursor-pointer border-none transition-colors duration-300 hover:text-accent disabled:opacity-40 disabled:cursor-default disabled:hover:text-correct";
+  "bg-bg text-correct h-8 px-3 rounded-lg text-[12px] font-[inherit] font-bold cursor-pointer border-none transition-colors duration-300 hover:text-accent disabled:opacity-40 disabled:cursor-default disabled:hover:text-correct";
 
 /** How many past tests one page of the list holds. */
 const PER_PAGE = 10;

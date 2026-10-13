@@ -6,7 +6,7 @@ import { BoardSvg } from "./BoardSvg";
 
 const NOTE = "text-[11px] text-muted";
 const TURN_ON =
-  "bg-bg text-correct px-3 py-[6px] rounded-md text-[11px] cursor-pointer border-none font-[inherit] font-bold transition-colors duration-300 hover:text-accent";
+  "bg-bg text-correct h-8 px-3 rounded-lg text-[12px] cursor-pointer border-none font-[inherit] font-bold transition-colors duration-300 hover:text-accent";
 
 /**
  * The layout of the selected keyboard, drawn the way the typing page draws it — so picking a board

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { applyCustomText, closeTextModal } from "@/lib/engine";
 
 const BUTTON_CLASS =
-  "bg-transparent text-muted font-[inherit] text-[13px] cursor-pointer px-2 py-1 rounded-md transition-colors duration-300 outline-none hover:text-correct";
+  "h-10 bg-transparent text-muted font-[inherit] text-[13px] cursor-pointer px-3 rounded-lg border-2 transition-colors duration-300 outline-none hover:text-correct";
 
 export function CustomTextModal() {
   const [text, setText] = useState("");
@@ -31,12 +31,12 @@ export function CustomTextModal() {
           className="w-full h-[150px] bg-edge text-correct border-2 border-muted p-[15px] font-[inherit] text-base resize-none rounded-lg box-border outline-none transition-all duration-200 focus:border-accent"
         />
         <div className="flex justify-end gap-[15px] mt-5">
-          <button onClick={closeTextModal} className={`${BUTTON_CLASS} border border-solid border-muted`}>
+          <button onClick={closeTextModal} className={`${BUTTON_CLASS} border-muted`}>
             Cancel
           </button>
           <button
             onClick={() => applyCustomText(text)}
-            className={`${BUTTON_CLASS} bg-accent text-bg font-bold hover:text-bg`}
+            className={`${BUTTON_CLASS} border-transparent bg-accent text-bg font-bold hover:text-bg`}
           >
             Set Text
           </button>
