@@ -24,8 +24,8 @@ const CONTROL_KEYS: Record<string, string> = {
   SPC: " ",
 };
 
-// A press is read from the label at the pressed position, never from the target layout's label:
-// test-driving a layout must not turn Backspace into whatever character happens to sit there.
+// A press is read from the label at the pressed position, not from wherever that label has been
+// dragged to: moving a keycap must not turn Backspace into whatever character sits there now.
 export function controlKey(label: string | null | undefined): string | null {
   if (!label) return null;
   return CONTROL_KEYS[label.trim().toUpperCase().replace(/^&/, "")] ?? null;
@@ -44,8 +44,8 @@ export function keyLabelToChar(label: string, isUpperCase: boolean): string {
 /**
  * The character a press produces. A keycap label spells the unshifted character, so a shifted
  * symbol — ":" for Shift+";", "!" for Shift+"1" — can only come from what the OS delivered; the
- * label has no way to spell it. Letters stay label-driven, because the target layout decides which
- * key types which letter.
+ * label has no way to spell it. Letters stay label-driven, because the keymap decides which key
+ * types which letter.
  */
 export function pressedChar(label: string, delivered: string, shift: boolean, isUpperCase: boolean): string {
   const shiftedSymbol = shift && delivered.length === 1 && label.length === 1 && !/[a-z]/i.test(label);

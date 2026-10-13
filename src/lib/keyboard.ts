@@ -3,8 +3,8 @@ import { LANGUAGES, SCRIPT_MAPS } from "./languages";
 import type { ParsedZmk } from "./zmk";
 import type { Config, HardwareId, ImportedLayers, KeyGeo } from "./types";
 
-// Derive the script-based target layout (arabic) for every board from its qwerty layout,
-// so pressing a physical key produces the correct letter (blind typing of that script).
+// Derive the script layout (arabic) for every board from its qwerty layout, so pressing a
+// physical key produces the correct letter (blind typing of that script).
 export function buildScriptLayouts(): void {
   (Object.keys(HARDWARE) as HardwareId[]).forEach((hw) => {
     const q = HARDWARE[hw].layouts["qwerty"];
@@ -32,20 +32,8 @@ export function isHomerow(hw: HardwareId, pos: string): boolean {
   return /^R1C/.test(pos);
 }
 
-export function buildMap(
-  hw: HardwareId,
-  layoutName: string,
-  type: "source" | "target",
-  config: Config
-): Record<string, string> {
-  if (type === "target" && layoutName === "default") {
-    layoutName = config.sourceKey;
-    if (layoutName === "custom_json") return config.sourceJsonMap || {};
-  }
-
-  if (layoutName === "custom_json") return type === "source" ? config.sourceJsonMap || {} : config.targetJsonMap || {};
-  if (layoutName === "custom_dragged" && type === "target") return config.draggedMap || {};
-
+/** A board's built-in layout, as position -> label. */
+export function buildMap(hw: HardwareId, layoutName: string): Record<string, string> {
   const map: Record<string, string> = {};
   const posArray = HARDWARE[hw].pos;
   const layoutArray = HARDWARE[hw].layouts[layoutName] || HARDWARE[hw].layouts["qwerty"] || [];
@@ -55,33 +43,38 @@ export function buildMap(
   return map;
 }
 
-// Arabic is typed blind: its generated script layout stands in for the target, layers and all,
-// unless the user pointed the target at an imported or dragged map.
+// Arabic is typed blind: its generated script layout stands in for the keyboard's letters, unless
+// an imported keymap already spells them.
 export function usesScriptLayout(config: Config): boolean {
   const script = LANGUAGES[config.lang] && LANGUAGES[config.lang].script;
-  return script === "arabic" && config.tgt !== "custom_dragged" && config.tgt !== "custom_json";
+  return script === "arabic" && config.sourceKey !== "custom_json";
 }
 
-// The effective target map.
-export function currentTargetMap(config: Config): Record<string, string> {
-  if (usesScriptLayout(config)) {
-    return buildMap(config.hw, LANGUAGES[config.lang].script, "target", config);
-  }
-  return buildMap(config.hw, config.tgt, "target", config);
+/**
+ * Labels as the physical keys produce them. A press is matched against these, so a dragged key
+ * still answers to the letter its keycap originally had.
+ */
+export function currentMatchMap(config: Config): Record<string, string> {
+  return config.sourceKey === "custom_json" ? config.sourceJsonMap || {} : buildMap(config.hw, config.sourceKey);
+}
+
+/**
+ * The layout the board draws and every press is judged by: your imported keymap, the script layout
+ * for a blind-typed language, or the standard layout you picked — with any dragged keys on top.
+ */
+export function currentLayoutMap(config: Config): Record<string, string> {
+  const base =
+    config.sourceKey === "custom_json"
+      ? config.sourceJsonMap || {}
+      : usesScriptLayout(config)
+        ? buildMap(config.hw, LANGUAGES[config.lang].script)
+        : buildMap(config.hw, config.sourceKey);
+  return config.draggedMap ? { ...base, ...config.draggedMap } : base;
 }
 
 // Imported keymaps carry every layer; keep them together so the board can show the one in use.
 export function importedLayersFrom(parsed: ParsedZmk): ImportedLayers {
   return { names: parsed.names, maps: parsed.layers, activators: parsed.activators };
-}
-
-// Layer data for the effective target, mirroring currentTargetMap's fallbacks: a default target
-// is the source import, a built-in layout has a single layer, and a dragged map only edits base.
-export function currentTargetLayers(config: Config): ImportedLayers | null {
-  if (usesScriptLayout(config)) return null; // the generated script layout stands in for the target
-  if (config.tgt === "default") return config.sourceLayers;
-  if (config.tgt === "custom_json") return config.targetLayers;
-  return null;
 }
 
 // The layers of what the computer actually outputs, which is what a press can be traced back to.

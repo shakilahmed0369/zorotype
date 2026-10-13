@@ -86,11 +86,11 @@ export function SettingsMenu() {
   const { config } = useEngine();
   const theme = getTheme(config.theme);
 
-  const handleLayoutUpload = (e: ChangeEvent<HTMLInputElement>, type: "source" | "target") => {
+  const handleLayoutUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => applyLayoutFile(String(ev.target?.result ?? ""), type);
+    reader.onload = (ev) => applyLayoutFile(String(ev.target?.result ?? ""));
     reader.readAsText(file);
     e.target.value = "";
   };
@@ -245,8 +245,10 @@ export function SettingsMenu() {
           </div>
           <div className={ROW}>
             <div className={LABEL_WRAP}>
-              <span className={LABEL_TITLE}>Source Layout (OS)</span>
-              <span className={LABEL_DESC}>The physical layout your computer outputs — upload a .json / .keymap (layers included)</span>
+              <span className={LABEL_TITLE}>Keyboard Layout</span>
+              <span className={LABEL_DESC}>
+                The layout your computer outputs — pick a standard one, or load a .json / .keymap (layers included)
+              </span>
             </div>
             <div className={ACTION}>
               <label htmlFor="sourceJsonUpload" className={UPLOAD}>
@@ -257,7 +259,7 @@ export function SettingsMenu() {
                 id="sourceJsonUpload"
                 accept=".json,.keymap,.dtsi,.dts,.overlay"
                 className="hidden"
-                onChange={(e) => handleLayoutUpload(e, "source")}
+                onChange={handleLayoutUpload}
               />
               <select value={config.sourceKey} onChange={(e) => setPref("sourceKey", e.target.value)} className={SELECT}>
                 {LAYOUTS.map((k) => (
@@ -268,44 +270,6 @@ export function SettingsMenu() {
                 {config.sourceJsonMap && (
                   <option value="custom_json" className={OPTION}>
                     Imported
-                  </option>
-                )}
-              </select>
-            </div>
-          </div>
-          <div className={ROW}>
-            <div className={LABEL_WRAP}>
-              <span className={LABEL_TITLE}>Target Layout</span>
-              <span className={LABEL_DESC}>The visual layout you want to test drive — upload a .json / .keymap (layers included)</span>
-            </div>
-            <div className={ACTION}>
-              <label htmlFor="targetJsonUpload" className={UPLOAD}>
-                load file
-              </label>
-              <input
-                type="file"
-                id="targetJsonUpload"
-                accept=".json,.keymap,.dtsi,.dts,.overlay"
-                className="hidden"
-                onChange={(e) => handleLayoutUpload(e, "target")}
-              />
-              <select value={config.tgt} onChange={(e) => setPref("tgt", e.target.value)} className={SELECT}>
-                <option value="default" className={OPTION}>
-                  Default (Same as Source)
-                </option>
-                {LAYOUTS.map((k) => (
-                  <option key={k} value={k} className={OPTION}>
-                    {k.toUpperCase()}
-                  </option>
-                ))}
-                {config.targetJsonMap && (
-                  <option value="custom_json" className={OPTION}>
-                    Imported
-                  </option>
-                )}
-                {config.draggedMap && (
-                  <option value="custom_dragged" className={OPTION}>
-                    Custom (Dragged)
                   </option>
                 )}
               </select>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HARDWARE } from "./hardware";
-import { buildKeyRects, buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getFingerName, getMirroredMap, sourceLayersFor, usesScriptLayout } from "./keyboard";
+import { buildKeyRects, buildMap, buildScriptLayouts, currentLayoutMap, currentMatchMap, getFingerName, getMirroredMap, sourceLayersFor, usesScriptLayout } from "./keyboard";
 import { DEFAULT_CONFIG } from "./storage";
 import type { Config, ImportedLayers } from "./types";
 
@@ -8,48 +8,56 @@ const cfg = (over: Partial<Config> = {}): Config => ({ ...DEFAULT_CONFIG, ...ove
 
 describe("buildMap", () => {
   it("maps layout labels onto hardware positions", () => {
-    const map = buildMap("go60", "qwerty", "target", cfg());
+    const map = buildMap("go60", "qwerty");
     expect(map[HARDWARE.go60.pos[0]]).toBe(HARDWARE.go60.layouts.qwerty[0]);
     expect(map[HARDWARE.go60.pos[59]]).toBe(HARDWARE.go60.layouts.qwerty[59]);
   });
 
-  it("resolves a default target to the source layout", () => {
-    const map = buildMap("go60", "default", "target", cfg({ sourceKey: "dvorak" }));
-    expect(map[HARDWARE.go60.pos[1]]).toBe(HARDWARE.go60.layouts.dvorak[1]);
-  });
-
   it("falls back to qwerty for unknown layout names", () => {
-    const map = buildMap("go60", "nonsense", "target", cfg());
+    const map = buildMap("go60", "nonsense");
     expect(map[HARDWARE.go60.pos[0]]).toBe(HARDWARE.go60.layouts.qwerty[0]);
-  });
-
-  it("returns custom json maps verbatim", () => {
-    const custom = { L_C0R0: "Z" };
-    expect(buildMap("corne", "custom_json", "source", cfg({ sourceJsonMap: custom }))).toBe(custom);
-    expect(buildMap("corne", "custom_json", "target", cfg({ targetJsonMap: custom }))).toBe(custom);
-    expect(buildMap("corne", "custom_dragged", "target", cfg({ draggedMap: custom }))).toBe(custom);
-  });
-
-  it("resolves a custom_json default target to the source json map", () => {
-    const source = { L_C0R0: "Q" };
-    const map = buildMap("corne", "default", "target", cfg({ sourceKey: "custom_json", sourceJsonMap: source }));
-    expect(map).toBe(source);
   });
 });
 
-describe("currentTargetMap", () => {
-  it("forces the generated script layout for rtl languages", () => {
+describe("currentLayoutMap", () => {
+  it("draws the layout the computer outputs", () => {
+    const map = currentLayoutMap(cfg({ sourceKey: "dvorak", hw: "go60" }));
+    expect(map[HARDWARE.go60.pos[13]]).toBe(HARDWARE.go60.layouts.dvorak[13]);
+  });
+
+  it("prefers the imported keymap over the built-in layout", () => {
+    const imported = { L_C0R0: "Q" };
+    expect(currentLayoutMap(cfg({ sourceKey: "custom_json", sourceJsonMap: imported }))).toBe(imported);
+  });
+
+  it("reads Arabic through its generated script layout", () => {
     buildScriptLayouts();
-    const map = currentTargetMap(cfg({ lang: "ar", hw: "go60" }));
+    const map = currentLayoutMap(cfg({ lang: "ar", hw: "go60" }));
     expect(map[HARDWARE.go60.pos[13]]).toBe("ض"); // the Q key types its Arabic letter
   });
 
-  it("respects explicit custom targets even for rtl languages", () => {
+  it("lets an imported keymap spell its own letters for a script language", () => {
     buildScriptLayouts();
-    const base = buildMap("go60", "qwerty", "target", cfg());
-    const dragged = { ...base, [HARDWARE.go60.pos[0]]: "X" };
-    const map = currentTargetMap(cfg({ lang: "ar", tgt: "custom_dragged", draggedMap: dragged }));
+    const imported = { [HARDWARE.go60.pos[13]]: "ع" };
+    const map = currentLayoutMap(cfg({ lang: "ar", hw: "go60", sourceKey: "custom_json", sourceJsonMap: imported }));
+    expect(map[HARDWARE.go60.pos[13]]).toBe("ع");
+  });
+
+  it("lays dragged keys over whichever layout is in play", () => {
+    const base = buildMap("go60", "qwerty");
+    const dragged = { [HARDWARE.go60.pos[0]]: "X" };
+    const map = currentLayoutMap(cfg({ hw: "go60", draggedMap: dragged }));
     expect(map[HARDWARE.go60.pos[0]]).toBe("X");
+    expect(map[HARDWARE.go60.pos[1]]).toBe(base[HARDWARE.go60.pos[1]]);
+  });
+});
+
+describe("currentMatchMap", () => {
+  it("keeps the physical labels, so a dragged key still answers to its original letter", () => {
+    const base = buildMap("go60", "qwerty");
+    const dragged = { [HARDWARE.go60.pos[0]]: "X" };
+    const match = currentMatchMap(cfg({ hw: "go60", draggedMap: dragged }));
+    expect(match[HARDWARE.go60.pos[0]]).toBe(base[HARDWARE.go60.pos[0]]);
   });
 });
 
@@ -60,32 +68,8 @@ describe("usesScriptLayout", () => {
     expect(usesScriptLayout(cfg({ lang: "es" }))).toBe(false);
   });
 
-  it("gives way to an explicit target", () => {
-    expect(usesScriptLayout(cfg({ lang: "ar", tgt: "custom_dragged" }))).toBe(false);
-  });
-});
-
-describe("currentTargetLayers", () => {
-  const imported: ImportedLayers = {
-    names: ["Base", "Lower"],
-    maps: [["Q"], ["1"]],
-    activators: [{}, {}],
-  };
-
-  it("follows a default target back to the source import", () => {
-    expect(currentTargetLayers(cfg({ tgt: "default", sourceLayers: imported }))).toBe(imported);
-  });
-
-  it("uses the target import when the target is an imported layout", () => {
-    expect(currentTargetLayers(cfg({ tgt: "custom_json", targetLayers: imported }))).toBe(imported);
-    expect(currentTargetLayers(cfg({ tgt: "custom_json", sourceLayers: imported }))).toBeNull();
-  });
-
-  it("has no layers for built-in layouts, dragged maps and script targets", () => {
-    expect(currentTargetLayers(cfg({ tgt: "colemak-dh", sourceLayers: imported }))).toBeNull();
-    expect(currentTargetLayers(cfg({ tgt: "custom_dragged", sourceLayers: imported }))).toBeNull();
-    buildScriptLayouts();
-    expect(currentTargetLayers(cfg({ lang: "ar", tgt: "default", sourceLayers: imported }))).toBeNull();
+  it("gives way to a keymap that spells the letters itself", () => {
+    expect(usesScriptLayout(cfg({ lang: "ar", sourceKey: "custom_json" }))).toBe(false);
   });
 });
 

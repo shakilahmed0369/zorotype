@@ -25,9 +25,9 @@ your browser.
 
 Typing trainers assume a flat 60-key board. Split and columnar keyboards are not that: the letters
 sit under different fingers, half the alphabet lives behind a thumb key, and `1` is a layer away
-from `Q`. Zorotype draws **your** board while you type, follows the layer your hands are in, and
-scores every press the way Monkeytype does — so you can build the muscle memory before you flash
-the firmware, and keep it afterwards.
+from `Q`. Zorotype draws **your** board while you type — the layout your computer actually outputs,
+layer by layer — and scores every press the way Monkeytype does, so the numbers match the keyboard
+under your hands.
 
 ---
 
@@ -49,8 +49,8 @@ the firmware, and keep it afterwards.
   QMK `info.json` for the hardware. Behaviours are unpacked (`&kp`, `&mt`, `&lt`, `&mo`, `&sl`,
   `&to`, inline macros, `&trans`), modifiers are stripped to the base character, every layer is
   read, and layer/bluetooth/reset keys become inert labels so they never pollute your stats.
-- **Drag to remap.** Tweak the target layout by dragging keycaps around on the board itself — a
-  what-if before you touch firmware (edits the base layer).
+- **Drag to match your keymap.** If a keycap came through wrong, drag it onto the right key: the
+  board and the scoring both follow your correction (base layer).
 - **Derived starting point.** A board with no imported keymap still works: Zorotype derives a
   standard QWERTY from the key geometry, so the on-screen board is useful immediately.
 
@@ -87,8 +87,8 @@ the firmware, and keep it afterwards.
 ## Quick start
 
 1. Open [zorotype.vercel.app](https://zorotype.vercel.app) — nothing to install.
-2. **Settings (⚙)** → pick your **Hardware**, then your **Source OS Layout** (what your computer
-   outputs) and **Target Layout** (what you want to test-drive). Both accept a file.
+2. **Settings (⚙)** → pick your **Hardware**, then your **Keyboard Layout**: a standard one, or
+   `load file` for your own `.keymap` / `.json` (layers and all).
 3. Choose a mode and a length in the nav bar; `@ punctuation` and `# numbers` weave real symbols and
    capitals into the pool.
 4. Start typing. The board shows where your fingers should go; the caret waits for you.

@@ -3,7 +3,7 @@ import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { registerCustomBoard, HARDWARE } from "./hardware";
 import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, pressedChar } from "./input-rules";
-import { buildMap, buildScriptLayouts, currentTargetLayers, currentTargetMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor } from "./keyboard";
+import { buildScriptLayouts, currentLayoutMap, currentMatchMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor, usesScriptLayout } from "./keyboard";
 import {
   LAYER_HOLD_MS,
   buildLayerStack,
@@ -145,7 +145,7 @@ export async function init(): Promise<void> {
     localStorage.setItem(VER_KEY, APP_VERSION);
   }
 
-  buildScriptLayouts(); // derive the arabic target layout for every board
+  buildScriptLayouts(); // derive the arabic layout for every board
 
   Object.assign(config, loadStoredConfig());
   const restoredBoard = config.customBoard
@@ -178,8 +178,8 @@ export async function init(): Promise<void> {
 }
 
 function refreshMaps(): void {
-  game.currentMap = currentTargetMap(config);
-  game.sourceMap = buildMap(config.hw, config.sourceKey, "source", config);
+  game.currentMap = currentLayoutMap(config);
+  game.sourceMap = currentMatchMap(config);
   refreshLayerStacks();
 }
 
@@ -200,16 +200,11 @@ function refreshLayerStacks(): void {
     return;
   }
 
-  const targetStack = buildLayerStack(config.hw, currentTargetLayers(config));
-  const withDrag =
-    targetStack && config.tgt === "custom_dragged" && config.draggedMap
-      ? withLayerOverride(targetStack, 0, config.draggedMap)
-      : targetStack;
-
-  game.currentLayers = withDrag;
-  // Presses are traced against what the computer outputs; without an imported source the
-  // target's own layers are the best available description of the board.
-  game.sourceStack = buildLayerStack(config.hw, sourceLayersFor(config)) ?? withDrag;
+  // Presses are traced against what the computer outputs, and the board draws those same layers —
+  // with any dragged keys overriding the base one.
+  const matchStack = buildLayerStack(config.hw, sourceLayersFor(config));
+  game.sourceStack = matchStack;
+  game.currentLayers = matchStack && config.draggedMap ? withLayerOverride(matchStack, 0, config.draggedMap) : matchStack;
 
   const available = game.currentLayers?.resolved.length ?? 1;
   if (ui.activeLayer !== null && ui.activeLayer >= available) ui.activeLayer = 0;
@@ -270,9 +265,9 @@ function posForLabel(layer: number, label: string): string | undefined {
   return undefined;
 }
 
-// The target map for the layer a press came from: a layered target is read on that layer, a flat
-// target keeps its base map, and anything else stays the character the computer delivered.
-function targetMapForLayer(srcLayer: number): Record<string, string> | null {
+// The map for the layer a press came from: a layered keymap is read on that layer, a flat layout
+// keeps its base map, and a label that types nothing stays the character the computer delivered.
+function layoutMapFor(srcLayer: number): Record<string, string> | null {
   const stack = game.currentLayers;
   if (stack) {
     if (!stack.resolved[srcLayer]) return null;
@@ -290,7 +285,7 @@ function targetMapForLayer(srcLayer: number): Record<string, string> | null {
 export function setPref<K extends keyof Config>(key: K, val: Config[K]): void {
   config[key] = val;
   persistConfig(config);
-  if (key === "hw" || key === "tgt" || key === "sourceKey" || key === "mirror" || key === "homerow" || key === "layerFollow") {
+  if (key === "hw" || key === "sourceKey" || key === "mirror" || key === "homerow" || key === "layerFollow") {
     if (key === "hw") reapplyStoredKeymaps();
     refreshMaps();
   }
@@ -414,6 +409,7 @@ export function applyKeyboardLayout(fileText: string): void {
   const registeredId = registerCustomBoard(parsed, defaultLayoutsFor(parsed));
   config.customBoard = { ...parsed, id: registeredId };
   config.hw = registeredId;
+  config.draggedMap = null; // a new board means new positions, so the old arrangement is void
   reapplyStoredKeymaps();
   persistConfig(config);
   refreshMaps();
@@ -450,6 +446,7 @@ export async function setHardware(id: string): Promise<void> {
   const registeredId = registerCustomBoard(board, defaultLayoutsFor(board));
   config.customBoard = { ...board, id: registeredId };
   config.hw = registeredId;
+  config.draggedMap = null; // a new board means new positions, so the old arrangement is void
   reapplyStoredKeymaps();
   persistConfig(config);
   refreshMaps();
@@ -459,32 +456,23 @@ export async function setHardware(id: string): Promise<void> {
 // Imported keymaps are stored as text and re-parsed for whatever board is active, so the
 // position ids always line up (a map built for one board means nothing to another).
 function reapplyStoredKeymaps(): boolean {
-  let reapplied = false;
-  (["source", "target"] as const).forEach((type) => {
-    const text = type === "source" ? config.sourceKeymapText : config.targetKeymapText;
-    if (!text) return;
-    try {
-      const parsed = parseZmkLayout(text, config.hw);
-      if (type === "source") {
-        config.sourceJsonMap = parsed.map;
-        config.sourceLayers = importedLayersFrom(parsed);
-      } else {
-        config.targetJsonMap = parsed.map;
-        config.targetLayers = importedLayersFrom(parsed);
-      }
-      reapplied = true;
-    } catch {
-      /* keep the previous map if the stored text no longer parses */
-    }
-  });
-  return reapplied;
+  const text = config.sourceKeymapText;
+  if (!text) return false;
+  try {
+    const parsed = parseZmkLayout(text, config.hw);
+    config.sourceJsonMap = parsed.map;
+    config.sourceLayers = importedLayersFrom(parsed);
+    return true;
+  } catch {
+    return false; // keep the previous map if the stored text no longer parses
+  }
 }
 
 /* ==========================================================================
    ZMK LAYOUT IMPORT (JSON export or raw .keymap / .dtsi source)
    ========================================================================== */
 
-export function applyLayoutFile(fileText: string, type: "source" | "target"): void {
+export function applyLayoutFile(fileText: string): void {
   let parsed: ParsedZmk;
   try {
     parsed = parseZmkLayout(fileText, config.hw);
@@ -495,25 +483,16 @@ export function applyLayoutFile(fileText: string, type: "source" | "target"): vo
   }
 
   config.hw = parsed.hw;
-  if (type === "source") {
-    config.sourceJsonMap = parsed.map;
-    config.sourceLayers = importedLayersFrom(parsed);
-    config.sourceKey = "custom_json";
-    config.sourceKeymapText = fileText;
-    // A board with no built-in letters can only show the imported ones, so don't leave the
-    // target pointed at a layout name that renders blank.
-    if (!HARDWARE[config.hw].layouts[config.tgt]) config.tgt = "default";
-  } else {
-    config.targetJsonMap = parsed.map;
-    config.targetLayers = importedLayersFrom(parsed);
-    config.tgt = "custom_json";
-    config.targetKeymapText = fileText;
-  }
+  config.sourceJsonMap = parsed.map;
+  config.sourceLayers = importedLayersFrom(parsed);
+  config.sourceKey = "custom_json";
+  config.sourceKeymapText = fileText;
+  config.draggedMap = null; // the old arrangement belongs to the keymap it was made on
 
   persistConfig(config);
   refreshMaps();
   notify();
-  showToast(`${type === "source" ? "Source" : "Target"} layout loaded — ${parsed.layers.length} layer${parsed.layers.length === 1 ? "" : "s"}!`);
+  showToast(`Layout loaded — ${parsed.layers.length} layer${parsed.layers.length === 1 ? "" : "s"}!`);
 }
 
 /* ==========================================================================
@@ -522,7 +501,11 @@ export function applyLayoutFile(fileText: string, type: "source" | "target"): vo
 
 export async function setLang(lang: LanguageCode): Promise<void> {
   if (!LANGUAGES[lang]) return;
+  // A blind-typed script replaces the layout's letters, so an arrangement dragged on the old
+  // layout no longer applies.
+  const scriptBefore = usesScriptLayout(config);
   config.lang = lang;
+  if (usesScriptLayout(config) !== scriptBefore) config.draggedMap = null;
   persistConfig(config);
 
   // Reconcile the current mode with the sources available in the new language.
@@ -530,7 +513,7 @@ export async function setLang(lang: LanguageCode): Promise<void> {
 
   await loadLangDictionary(lang);
 
-  refreshMaps(); // rebuilds source/target maps (non-Latin scripts force their layout)
+  refreshMaps(); // rebuilds the layout and its layers (a script language forces its letters)
   restartCurrentMode();
 }
 
@@ -782,17 +765,14 @@ export function practiceMistakes(): void {
 export function swapKeys(sourcePos: string, targetPos: string): void {
   const src = config.mirror ? mirrorPos(sourcePos) : sourcePos;
   const trg = config.mirror ? mirrorPos(targetPos) : targetPos;
+  const layout = currentLayoutMap(config);
+  if (src === trg || !layout[src] || !layout[trg]) return;
 
-  if (config.tgt !== "custom_dragged") {
-    config.draggedMap = { ...currentTargetMap(config) }; // seed from the effective layout
-    config.tgt = "custom_dragged";
-  }
+  const dragged = { ...layout }; // seed from the layout on screen, then swap the two labels
+  dragged[src] = layout[trg];
+  dragged[trg] = layout[src];
 
-  const dragged = config.draggedMap as Record<string, string>;
-  const temp = dragged[src];
-  dragged[src] = dragged[trg];
-  dragged[trg] = temp;
-
+  config.draggedMap = dragged;
   persistConfig(config);
   refreshMaps();
   notify();
@@ -953,14 +933,13 @@ export function handleKeyDown(e: KeyboardEvent): void {
 
   const isUpperCase = e.key === e.key.toUpperCase() && e.key !== e.key.toLowerCase();
 
-  // Control keys are read from the key that was pressed (and from the event itself as a
-  // fallback), never from the target layout: a test-drive remap must not turn Backspace or the
-  // space bar into whatever character happens to sit at that position.
+  // Control keys are read from the key that was pressed (and from the event itself as a fallback),
+  // so dragging a keycap never turns Backspace or the space bar into whatever sits at that position.
   const control = controlKey(pos ? sourceMap[pos] : null) ?? controlKey(e.key);
   if (control !== null) {
     mappedChar = control;
   } else if (pos) {
-    const workingMap = targetMapForLayer(srcLayer);
+    const workingMap = layoutMapFor(srcLayer);
     if (workingMap && workingMap[pos] !== undefined) {
       mappedChar = pressedChar(workingMap[pos], e.key, e.shiftKey, isUpperCase);
     }

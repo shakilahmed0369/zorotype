@@ -72,8 +72,8 @@ export interface Config {
   theme: string;
   hw: HardwareId;
   customBoard: BoardLayout | null;
+  /** The layout the computer outputs: a built-in name, or "custom_json" for an imported keymap. */
   sourceKey: string;
-  tgt: string;
   wordCount: string;
   timed: string;
   mode: GameMode;
@@ -90,15 +90,13 @@ export interface Config {
   sound: boolean;
   debug: boolean;
   sourceJsonMap: Record<string, string> | null;
-  targetJsonMap: Record<string, string> | null;
+  /** Base-layer labels the user rearranged by dragging keycaps on the board. */
   draggedMap: Record<string, string> | null;
   // Every layer of an imported keymap, so the on-screen board can follow the layer in use.
   sourceLayers: ImportedLayers | null;
-  targetLayers: ImportedLayers | null;
   layerFollow: boolean;
-  // Raw imported keymap files, kept so they can be re-parsed when the board changes.
+  // Raw imported keymap file, kept so it can be re-parsed when the board changes.
   sourceKeymapText: string | null;
-  targetKeymapText: string | null;
 }
 
 export interface FingerHit {

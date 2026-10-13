@@ -15,7 +15,6 @@ export const DEFAULT_CONFIG: Config = {
   hw: "go60",
   customBoard: null,
   sourceKey: "qwerty",
-  tgt: "default",
   wordCount: "25",
   timed: "0",
   mode: "words",
@@ -32,13 +31,10 @@ export const DEFAULT_CONFIG: Config = {
   sound: true,
   debug: false,
   sourceJsonMap: null,
-  targetJsonMap: null,
   draggedMap: null,
   sourceLayers: null,
-  targetLayers: null,
   layerFollow: true,
   sourceKeymapText: null,
-  targetKeymapText: null,
 };
 
 export function loadConfig(): Config {

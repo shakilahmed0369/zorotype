@@ -119,7 +119,7 @@ export function Keyboard() {
             ? "No letters for this board — import your .keymap (Settings → Matrix & Layout) or pick a built-in board"
             : stack && stack.names.length > 1
               ? `Showing ${stack.names[layer]} — the board follows the layer you type in • Tab+Enter to restart`
-              : "Drag keys to tweak target layout • Tab+Enter to restart"}
+              : "Drag keys to match your keymap • Tab+Enter to restart"}
         </div>
       )}
 

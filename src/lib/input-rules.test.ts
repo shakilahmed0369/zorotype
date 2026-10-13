@@ -10,7 +10,7 @@ describe("pressedChar", () => {
     expect(pressedChar("=", "+", true, false)).toBe("+");
   });
 
-  it("keeps letters label-driven, so a test-drive still follows the target layout", () => {
+  it("keeps letters label-driven, so the keymap's own letters win", () => {
     expect(pressedChar("Q", "Q", true, true)).toBe("Q");
     expect(pressedChar("Q", "q", false, false)).toBe("q");
     expect(pressedChar("A", "A", false, false)).toBe("a");

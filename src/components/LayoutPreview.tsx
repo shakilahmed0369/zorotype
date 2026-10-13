@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { setPref } from "@/lib/engine";
-import { buildKeyRects, currentTargetLayers, currentTargetMap, getMirroredMap } from "@/lib/keyboard";
+import { buildKeyRects, currentLayoutMap, getMirroredMap, sourceLayersFor } from "@/lib/keyboard";
 import { BoardSvg } from "./BoardSvg";
 
 const NOTE = "text-[11px] text-muted";
@@ -9,16 +9,16 @@ const TURN_ON =
   "bg-bg text-correct px-3 py-[6px] rounded-md text-[11px] cursor-pointer border-none font-[inherit] font-bold transition-colors duration-300 hover:text-accent";
 
 /**
- * The layout of the selected keyboard, drawn the way the typing page draws it — so picking a
- * board, a source keymap or a target layout can be checked without closing Settings. Read-only:
- * it never changes what the practice board shows.
+ * The layout of the selected keyboard, drawn the way the typing page draws it — so picking a board
+ * or importing a keymap can be checked without closing Settings. Read-only: it never changes what
+ * the practice board shows.
  */
 export function LayoutPreview() {
   const { config, ui } = useEngine();
 
   const layout = useMemo(() => buildKeyRects(config.hw), [config.hw]);
-  const map = currentTargetMap(config);
-  const layerCount = currentTargetLayers(config)?.maps.length ?? 0;
+  const map = currentLayoutMap(config);
+  const layerCount = sourceLayersFor(config)?.maps.length ?? 0;
 
   if (!Object.values(map).some((label) => label)) {
     return (

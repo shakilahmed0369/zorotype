@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildMap } from "./keyboard";
 import { buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
-import { DEFAULT_CONFIG } from "./storage";
-import type { Config } from "./types";
-
-const cfg = (over: Partial<Config> = {}): Config => ({ ...DEFAULT_CONFIG, ...over });
 
 describe("countStrictCorrectChars", () => {
   it("counts fully correct words plus their trailing space", () => {
@@ -117,7 +113,7 @@ describe("buildMistakePractice", () => {
       mistakeChars: { a: 1 },
       mistakeWords: new Set(["cat", "dog"]),
       fingerHits: {},
-      workingMap: buildMap("go60", "qwerty", "target", cfg()),
+      workingMap: buildMap("go60", "qwerty"),
       hw: "go60",
       count: 10,
       pool: ["apple", "banana", "cart", "amber", "zebra"],
@@ -127,7 +123,7 @@ describe("buildMistakePractice", () => {
   });
 
   it("weights chars from weak fingers", () => {
-    const workingMap = buildMap("corne", "qwerty", "target", cfg());
+    const workingMap = buildMap("corne", "qwerty");
     const selected = buildMistakePractice({
       mistakeChars: {},
       mistakeWords: new Set(),

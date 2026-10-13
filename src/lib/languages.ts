@@ -22,7 +22,7 @@ export function normalizeArabic(w: string): string {
   return w.replace(/[\u064B-\u0652\u0640\u0670]/g, "").replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627");
 }
 
-// `script:'latin'` keeps the user's target layout; arabic forces its own.
+// `script:'latin'` keeps the user's own letters; arabic replaces them with its script.
 export const LANGUAGES: Record<LanguageCode, LanguageDef> = {
   en: { name: "English", dir: "ltr", script: "latin" },
   es: {
