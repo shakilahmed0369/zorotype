@@ -578,8 +578,10 @@ export function generateWords(): void {
 /** Code mode: one snippet from the selected language, kept verbatim so its layout survives. */
 export function generateCode(): void {
   config.mode = "code";
+  const snippet = pickSnippet(config.codeLang, config.codeLastSnippet);
+  config.codeLastSnippet = snippet;
   persistConfig(config);
-  setupNewTest(pickSnippet(config.codeLang), { raw: true });
+  setupNewTest(snippet, { raw: true });
 }
 
 /** Choosing a language starts code practice straight away, the way applying custom text does. */

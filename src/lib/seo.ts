@@ -77,7 +77,7 @@ export const STRUCTURED_DATA = {
         "86-board keyboard library, plus QMK info.json and Keymap Editor imports",
         "Monkeytype-style scoring with WPM, accuracy and per-key heatmaps",
         "Mistake drills, six practice languages and every Monkeytype theme",
-        "Code practice: 24 source snippets across 8 programming languages",
+        "Code practice: 48 source snippets across 8 programming languages",
       ],
       author: { "@id": AUTHOR_ID },
       creator: { "@id": AUTHOR_ID },

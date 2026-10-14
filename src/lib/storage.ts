@@ -20,6 +20,7 @@ export const DEFAULT_CONFIG: Config = {
   timed: "0",
   mode: "words",
   codeLang: DEFAULT_CODE_LANGUAGE,
+  codeLastSnippet: null,
   difficulty: "normal",
   stopOnError: "off",
   blindMode: false,

@@ -19,7 +19,7 @@ describe("code snippet registry", () => {
       // The test-config bar only has room for a compact label.
       expect(lang.short.length, lang.id).toBeGreaterThan(0);
       expect(lang.short.length, lang.id).toBeLessThanOrEqual(4);
-      expect(lang.snippets.length, lang.id).toBeGreaterThanOrEqual(3);
+      expect(lang.snippets.length, lang.id).toBeGreaterThanOrEqual(6);
     }
   });
 
@@ -57,8 +57,18 @@ describe("code snippet registry", () => {
 
   it("picks a snippet from the language that was asked for", () => {
     const rust = codeLanguage("rust")?.snippets ?? [];
-    expect(rust).toContain(pickSnippet("rust", () => 0));
-    expect(rust).toContain(pickSnippet("rust", () => 0.99));
+    expect(rust).toContain(pickSnippet("rust", null, () => 0));
+    expect(rust).toContain(pickSnippet("rust", null, () => 0.99));
+  });
+
+  it("never hands back the snippet it was told to avoid", () => {
+    const rust = codeLanguage("rust")?.snippets ?? [];
+    const inUse = rust[0];
+    expect(pickSnippet("rust", inUse, () => 0)).not.toBe(inUse);
+    expect(pickSnippet("rust", inUse, () => 0.99)).not.toBe(inUse);
+    // An unknown exclusion or a single-snippet language still has to answer with something.
+    expect(rust).toContain(pickSnippet("rust", "not a snippet", () => 0));
+    expect(pickSnippet("rust", null, () => 0)).toBe(rust[0]);
   });
 });
 

@@ -58,10 +58,11 @@ under your hands.
 
 - **Modes** — `time` (15/30/60/120s), `words` (10/25/50/100), `news` (live text from NPR and NYT),
   `code` (real source snippets) and `custom` (paste your own text).
-- **Coding practice** — 24 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
+- **Coding practice** — 48 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
   Java, C# and C++), chosen in Settings. Code is drawn with its real line breaks and indentation;
   press `Enter` at the end of a line and the next line's indent is filled in for you, so only the
-  visible characters are typed.
+  visible characters are typed. A fresh snippet is picked for every new test, and never the one you
+  just typed.
 - **Input rules** — *normal*, *expert* (backspace locked) and *master* (frozen until you fix the
   error), plus stop-on-error for letters or words. Difficulty is recorded with every result.
 - **Scoring** — net WPM, raw WPM, real keypress accuracy, streaks, a per-finger accuracy breakdown,

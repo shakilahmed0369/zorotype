@@ -79,6 +79,8 @@ export interface Config {
   mode: GameMode;
   /** Programming language drilled by the code mode; a key into the snippet registry. */
   codeLang: string;
+  /** The snippet the last code test used, so the next one can avoid repeating it. */
+  codeLastSnippet: string | null;
   difficulty: Difficulty;
   stopOnError: StopOnError;
   blindMode: boolean;
