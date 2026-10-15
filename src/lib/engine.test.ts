@@ -2,7 +2,7 @@
 // touches are stubbed: storage is a no-op and there is nothing focused to blur. Everything else is
 // the real store, driven the way a keydown drives it.
 import { describe, expect, it } from "vitest";
-import { getGameState, handleKeyDown, setPref, setupNewTest } from "./engine";
+import { getConfigState, getGameState, handleKeyDown, setPref, setupNewTest } from "./engine";
 
 (globalThis as unknown as Record<string, unknown>).localStorage = {
   getItem: () => null,
@@ -11,6 +11,10 @@ import { getGameState, handleKeyDown, setPref, setupNewTest } from "./engine";
 };
 (globalThis as unknown as Record<string, unknown>).document = { activeElement: null };
 (globalThis as unknown as Record<string, unknown>).HTMLElement = class {};
+
+// Sound is the third browser API the engine reaches for: a mistake would build an AudioContext,
+// which Node has not got. None of these tests are about sound.
+setPref("sound", false);
 
 /** A keydown the way the browser sends it: the character, its physical code, no modifiers. */
 function press(ch: string): void {
@@ -78,5 +82,58 @@ describe("how a test ends", () => {
     typeSample(100);
     expect(game.typed).toBe(game.sample);
     expect(game.testCompleted).toBe(true);
+  });
+});
+
+describe("the result screen", () => {
+  /** Types the sample out, so the test finishes and its result is on screen. */
+  function finish(text: string): void {
+    setPref("mode", "words");
+    setPref("timed", "0");
+    setupNewTest(text);
+    typeSample(100);
+  }
+
+  it("keeps the result when a stray space or enter lands after the last word", () => {
+    finish("one two");
+    const game = getGameState();
+    const { sample, typed } = game;
+
+    press(" ");
+    press("Enter");
+
+    expect(game.testCompleted).toBe(true);
+    expect(game.sample).toBe(sample);
+    expect(game.typed).toBe(typed);
+  });
+
+  it("starts the next test on tab then enter", () => {
+    finish("one two");
+    const game = getGameState();
+
+    press("Tab");
+    press("Enter");
+
+    expect(game.testCompleted).toBe(false);
+    expect(game.typed).toBe("");
+    expect(game.sample).not.toBe("");
+  });
+
+  it("drills the mistakes on tab then space", () => {
+    setPref("mode", "words");
+    setPref("timed", "0");
+    setupNewTest("abc");
+    press("a");
+    press("x"); // wrong: the sample wanted "b"
+    press("b");
+    const game = getGameState();
+    expect(game.testCompleted).toBe(true);
+    expect(game.mistakes).toBeGreaterThan(0);
+
+    press("Tab");
+    press("Space");
+
+    expect(getConfigState().mode).toBe("mistakes");
+    expect(getGameState().testCompleted).toBe(false);
   });
 });

@@ -70,7 +70,7 @@ under your hands.
 - **Scoring** — net WPM, raw WPM, real keypress accuracy, streaks, a per-finger accuracy breakdown,
   and a heatmap of the keys you missed.
 - **Mistake practice** — the algorithm builds a drill from your weakest characters and fingers; from
-  the result screen, `Space` starts it.
+  the result screen, `Tab` then `Space` starts it.
 - **Focus when you want it** — blind mode hides the board entirely once you trust your hands;
   homerow highlighting, next-key hints and sound are each a toggle.
 
@@ -85,7 +85,7 @@ under your hands.
   fallbacks.
 - **Installable.** A web app manifest and icons make it installable on desktop and mobile. The
   service worker is deliberately a pass-through — there is no offline cache yet.
-- **Local by default.** Settings and your last 200 results live in `localStorage`. Word lists are
+- **Local by default.** Settings and your last 20 results live in `localStorage`. Word lists are
   fetched from Monkeytype's repository (with bundled fallbacks) and news mode pulls headlines
   through a public RSS proxy — nothing about you is ever sent, and there is no account to create.
 
@@ -109,12 +109,14 @@ under your hands.
 
 | Keys | What it does |
 | --- | --- |
-| `Tab` `Enter` | Restart the current test |
+| `Tab` `Enter` | Restart the current test — on the result screen, start the next one |
+| `Tab` `Space` | Drill your mistakes from the result screen |
 | `Escape` | End a running test early |
-| `Enter` | Start a fresh test from the result screen |
-| `Space` | Drill your mistakes from the result screen |
 | `Ctrl`/`Alt`/`⌘` + `Backspace` | Delete the whole word you are typing |
 | `Escape` / `Enter` | Leave the Settings or History page |
+
+On the result screen `Enter` and `Space` do nothing on their own: a test can end mid-word, and the
+key already on its way must not throw the result away.
 
 Unmodified browser shortcuts still work — `F5`, `F12` and your window shortcuts are not swallowed;
 `Ctrl`+`Backspace` is the one combination Zorotype claims for itself.

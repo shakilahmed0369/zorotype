@@ -7,6 +7,9 @@ export const CONFIG_KEY = "zorotype_cfg";
 export const HISTORY_KEY = "zorotype_history";
 export const VER_KEY = "zorotype_ver";
 
+/** How many finished tests the history keeps: the newest ones, the oldest dropping off first. */
+export const MAX_HISTORY = 20;
+
 /** Modes a stored config may carry; anything else (a retired mode) falls back to words. */
 export const GAME_MODES: readonly GameMode[] = ["words", "news", "custom", "code", "mistakes"];
 
@@ -56,7 +59,7 @@ export function saveConfig(config: Config): void {
 
 export function loadHistory(): HistoryEntry[] {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").slice(-MAX_HISTORY);
   } catch {
     return [];
   }
@@ -65,6 +68,5 @@ export function loadHistory(): HistoryEntry[] {
 export function saveResult(entry: HistoryEntry): void {
   const history = loadHistory();
   history.push(entry);
-  if (history.length > 200) history.splice(0, history.length - 200);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY)));
 }

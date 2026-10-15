@@ -1047,21 +1047,23 @@ export function handleKeyDown(e: KeyboardEvent): void {
     restartCurrentMode();
     return;
   }
+  // The result screen's other action is a Tab combination too: Enter and Space on their own stay
+  // inert there, so a keystroke that lands just as the clock runs out cannot wipe the result.
+  if (game.tabActive && game.testCompleted && (mappedChar === "Space" || mappedChar === " ")) {
+    e.preventDefault();
+    game.tabActive = false;
+    if (game.mistakes > 0) practiceMistakes();
+    else notify();
+    return;
+  }
   if (mappedChar === "Escape" && game.testStarted && !game.testCompleted) {
     e.preventDefault();
     endTest(true);
     return;
   }
+  // Everything is ignored on the result screen: typing must not grow a finished test, and a press
+  // that lands after the last word must not throw the result away either.
   if (game.testCompleted) {
-    if (mappedChar === "Enter") {
-      // Enter always starts a fresh test
-      e.preventDefault();
-      restartCurrentMode();
-    } else if (mappedChar === "Space" || mappedChar === " ") {
-      // Space deliberately triggers mistake practice
-      e.preventDefault();
-      if (game.mistakes > 0) practiceMistakes();
-    }
     notify();
     return;
   }

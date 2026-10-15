@@ -160,17 +160,13 @@ export function StatsPanel() {
       </div>
 
       <div className="text-muted text-sm mt-[30px] text-center w-full">
-        press <span className="text-accent">Tab</span> then <span className="text-accent">Enter</span> to restart
-        {game.mistakes > 0 ? (
+        press <span className="text-accent">Tab</span> then <span className="text-accent">Enter</span> to start the
+        next test
+        {game.mistakes > 0 && (
           <>
             {" "}
-            · <span className="text-accent">Space</span> practice mistakes · <span className="text-accent">Enter</span>{" "}
-            next test
-          </>
-        ) : (
-          <>
-            {" "}
-            · <span className="text-accent">Enter</span> to start next session
+            · <span className="text-accent">Tab</span> then <span className="text-accent">Space</span> to practice your
+            mistakes
           </>
         )}
       </div>
