@@ -2,6 +2,7 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import type { KeyboardLayout } from "@/lib/keyboard";
 import { isHomerow } from "@/lib/keyboard";
 import { shortKeyLabel } from "@/lib/key-labels";
+import { isBlankLabel } from "@/lib/layers";
 import type { HardwareId } from "@/lib/types";
 
 const BRAILLE_BLANK = "\u2800";
@@ -59,7 +60,7 @@ export function BoardSvg({
         layout.keys.map((k) => {
           const label = map[k.pos];
           const isHidden = label === BRAILLE_BLANK || label === "ø";
-          const isBlank = label === "NONE" || label === "TRANS" || label === "TRNS" || isHidden;
+          const isBlank = isHidden || isBlankLabel(label);
           const displayLabel = isBlank ? "" : shortKeyLabel(label === " " ? "Space" : (label ?? ""));
           const flashKind = flash && flash.pos === k.pos ? flash.kind : null;
           const isExpected = !!expectedPos && k.pos === expectedPos;

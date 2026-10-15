@@ -110,8 +110,8 @@ describe("parseZmkKeymap", () => {
     expect(parsed.map[pos[2]]).toBe("E");
     expect(parsed.map[pos[3]]).toBe("A"); // &mt LCTRL A -> tap key
     expect(parsed.map[pos[6]]).toBe("Space"); // &lt 1 SPACE -> tap key
-    expect(parsed.map[pos[7]]).toBe("NONE"); // &trans
-    expect(parsed.map[pos[8]]).toBe("NONE"); // &none
+    expect(parsed.map[pos[7]]).toBe("TRANS"); // &trans -> keeps the key from the layer below
+    expect(parsed.map[pos[8]]).toBe("NONE"); // &none -> nothing on this key at all
     expect(parsed.map[pos[9]]).toBe("MO"); // &mo 2 -> no character
     expect(parsed.map[pos[10]]).toBe("Z"); // &kp LS(Z)
     expect(parsed.map[pos[11]]).toBe("1"); // &kp N1
@@ -229,13 +229,21 @@ describe("parseZmkKeymap layers", () => {
 
     expect(parsed.layers[0][0]).toBe("Q");
     expect(parsed.layers[1][0]).toBe("1");
-    expect(parsed.layers[1][2]).toBe("NONE"); // &trans
+    expect(parsed.layers[1][2]).toBe("TRANS"); // &trans
     expect(parsed.layers[2][1]).toBe("!");
     expect(parsed.layers[2][2]).toBe("[");
     expect(parsed.layers[0]).toHaveLength(pos.length);
 
     // The flat map stays the base layer, so nothing that reads it changes behaviour.
     expect(parsed.map).toEqual(Object.fromEntries(pos.map((p, i) => [p, parsed.layers[0][i]])));
+  });
+
+  it("keeps an empty key apart from a transparent one", () => {
+    const parsed = parseZmkKeymap("bindings = <&kp A &trans &none &kp B>;", "corne");
+    const pos = HARDWARE.corne.pos;
+    expect(parsed.layers[0][1]).toBe("TRANS"); // &trans
+    expect(parsed.layers[0][2]).toBe("NONE"); // &none
+    expect(pos).toHaveLength(42);
   });
 
   it("records which key opens which layer", () => {
@@ -313,8 +321,18 @@ describe("parseZmkJson layers", () => {
     expect(parsed.layers[0][0]).toBe("Q");
     expect(parsed.layers[0][1]).toBe("Lower");
     expect(parsed.layers[1][0]).toBe("1");
-    expect(parsed.layers[1][1]).toBe("NONE");
+    expect(parsed.layers[1][1]).toBe("TRANS"); // { behavior: "&trans" }
     expect(parsed.activators[0][pos[1]]).toBe(1);
+  });
+
+  it("reads the other spellings of a key with nothing to type", () => {
+    const parsed = parseZmkJson(JSON.stringify([["&kp KC_NO", "&kp KC_TRNS", "_______", "XXXXXXX"]]), "corne");
+    expect(parsed.layers[0].slice(0, 4)).toEqual(["NONE", "TRANS", "TRANS", "NONE"]);
+  });
+
+  it("leaves an entry with no binding blank", () => {
+    const parsed = parseZmkJson(JSON.stringify([["&kp A", null, "", {}]]), "corne");
+    expect(parsed.layers[0].slice(0, 4)).toEqual(["A", "NONE", "NONE", "NONE"]);
   });
 
   it("keeps a single unnamed bindings list as one layer", () => {

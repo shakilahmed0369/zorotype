@@ -49,7 +49,11 @@ export interface ImportedLayers {
   activators: Array<Record<string, number>>;
 }
 
-/** An imported stack whose transparency (`&trans` / `&none`) has been resolved once. */
+/**
+ * An imported stack of layers. `raw` is what each layer assigns — what the board draws, empty
+ * where the file leaves a key empty. `resolved` has `&trans` filled in from the layer below,
+ * which is how a press on that key is read.
+ */
 export interface LayerStack {
   pos: string[];
   names: string[];

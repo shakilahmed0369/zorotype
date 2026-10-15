@@ -1,4 +1,4 @@
-import { HARDWARE, ZMK_EXCEPTIONS } from "./hardware";
+import { BLANK, HARDWARE, TRANSPARENT_LABEL, ZMK_EXCEPTIONS } from "./hardware";
 import { prettyLayerName } from "./layers";
 import type { BoardLayout, HardwareId, KeyGeo } from "./types";
 
@@ -11,7 +11,7 @@ const MOD_MAP: Record<string, string> = {
 };
 
 export function extractZMKLabel(bind: unknown): string {
-  if (!bind) return "NONE";
+  if (!bind) return BLANK;
   const flatArgs: string[] = [];
 
   const walkAST = (node: unknown): void => {
@@ -49,7 +49,7 @@ export function extractZMKLabel(bind: unknown): string {
     }
   }
 
-  const keycode = flatArgs.length > 0 ? flatArgs[flatArgs.length - 1] : "NONE";
+  const keycode = flatArgs.length > 0 ? flatArgs[flatArgs.length - 1] : BLANK;
   return String(keycode).toUpperCase().replace("KP_", "");
 }
 
@@ -73,9 +73,13 @@ interface RawLayer {
 // Behaviors that produce no character: layer switching, bluetooth, resets. Mapped to
 // inert multi-character labels so the engine leaves those keys out of scoring while the
 // on-screen keyboard still shows what they are.
+//
+// `&trans` and `&none` are not the same thing, though: `&trans` keeps whatever the layer below
+// has on this key, `&none` (and a key the file never binds) does nothing at all. They get a label
+// each so the layer stack can tell them apart instead of letting an empty key borrow a character.
 const NON_CHARACTER_BEHAVIORS: Record<string, string> = {
-  trans: "NONE",
-  none: "NONE",
+  trans: TRANSPARENT_LABEL,
+  none: BLANK,
   mo: "MO",
   to: "TO",
   tog: "TOG",
@@ -130,7 +134,7 @@ function labelFromEntry(entry: unknown): string {
   }
 
   const tokens = flatTokens(entry);
-  if (tokens.length === 0) return "NONE";
+  if (tokens.length === 0) return BLANK;
   const override = NON_CHARACTER_BEHAVIORS[tokens[0].toLowerCase()];
   if (override) return override;
   return extractZMKLabel(`&${tokens.join(" ")}`);
@@ -151,11 +155,13 @@ function buildLayerMaps(
     const active: Record<string, number> = {};
     positions.forEach((pos, index) => {
       const entry = rawLayer.entries[index];
-      let label = entry === undefined ? "NONE" : labelFromEntry(entry);
+      // A key the layer never spells out has nothing on it — it stays blank rather than
+      // borrowing the character the layer below happens to have there.
+      let label = entry === undefined ? BLANK : labelFromEntry(entry);
       const target = layerTarget(entry);
       // A pure layer key is more useful named after the layer it opens than as "MO"/"TO".
       if (target && PURE_LAYER_BEHAVIORS.has(target.kind) && names[target.layer]) label = names[target.layer];
-      labels.push(ZMK_EXCEPTIONS[label] || label);
+      labels.push(ZMK_EXCEPTIONS[label.trim().toUpperCase()] || label);
       if (target) active[pos] = target.layer;
     });
     layers.push(labels);

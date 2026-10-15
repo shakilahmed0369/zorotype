@@ -9,8 +9,9 @@ import {
   LAYER_HOLD_MS,
   buildLayerStack,
   findChar,
-  layerToMap,
+  isBlankLabel,
   predictedLayer,
+  resolvedLayerMap,
   visibleLayer,
   withLayerOverride,
 } from "./layers";
@@ -158,6 +159,9 @@ export async function init(): Promise<void> {
   // A saved hardware id can outlive the board it named — a library board whose data is gone, or a
   // layout file imported by an older build — and nothing can draw a board that is not registered.
   if (!HARDWARE[config.hw]) config.hw = restoredBoard ?? DEFAULT_CONFIG.hw;
+  // The stored labels are a cache of the parser, so re-read the keymap text that produced them:
+  // a change to how bindings are read reaches a keymap imported before it.
+  reapplyStoredKeymaps();
   config.theme = getTheme(config.theme).name;
   applyTheme(config.theme);
   ui.history = loadHistory();
@@ -269,11 +273,13 @@ function posForLabel(layer: number, label: string): string | undefined {
 
 // The map for the layer a press came from: a layered keymap is read on that layer, a flat layout
 // keeps its base map, and a label that types nothing stays the character the computer delivered.
+// The board draws a layer literally, but a press has to be read through `&trans`: the key really
+// does type whatever the layer below has, so the character arrives and has to be scored.
 function layoutMapFor(srcLayer: number): Record<string, string> | null {
   const stack = game.currentLayers;
   if (stack) {
     if (!stack.resolved[srcLayer]) return null;
-    const map = layerToMap(stack, srcLayer);
+    const map = resolvedLayerMap(stack, srcLayer);
     return config.mirror ? getMirroredMap(map) : map;
   }
   if (srcLayer !== 0) return null;
@@ -666,9 +672,52 @@ export function setupNewTest(text: string, options: { raw?: boolean; modify?: bo
 
   refreshMaps();
   updatePredictedLayer();
+  // A timed run is meant to have its next lines on screen from the first keystroke, rather than
+  // only once the opening text has been typed out.
+  stockTimedSample();
 
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   notify();
+}
+
+/* ==========================================================================
+   TIMED RUNS
+   A timed run has no last word — the clock ends it — so the text is never left to run out. It is
+   kept stocked ahead of the caret instead: the typing window holds three lines, and the two under
+   the one being typed stay filled while the clock is going.
+   ========================================================================== */
+
+/** How much untyped prose to keep ahead of the caret: a little over two lines of the window. */
+const TIMED_AHEAD_CHARS = 150;
+
+/** Words drawn per top-up, the same size the word pool uses for an opening sample. */
+const TIMED_STOCK_WORDS = 15;
+
+function isTimedRun(): boolean {
+  return config.mode === "words" && parseInt(config.timed) > 0;
+}
+
+// A chunk of prose for a run that is still going: drawn from the pool, modified the way the
+// opening text was, and capitalised to follow whatever the sample currently ends with.
+function continueText(count: number): string {
+  const shuffled = [...wordPool(config.lang)].sort(() => Math.random() - 0.5);
+  const extra: string[] = [];
+  for (let i = 0; i < count; i++) extra.push(shuffled[i % shuffled.length]);
+  return applyTextModifiers(extra.join(" "), {
+    punctuation: config.punctuation,
+    numbers: config.numbers,
+    capitalizeFirst: !/[.?!]$/.test(game.sample),
+  });
+}
+
+/** Tops a timed sample back up so there is always prose ahead of the caret. */
+function stockTimedSample(): void {
+  if (!isTimedRun()) return;
+  while (game.sample.length - game.typed.length < TIMED_AHEAD_CHARS) {
+    const chunk = continueText(TIMED_STOCK_WORDS);
+    if (!chunk) break; // an empty word pool: there is nothing to add, and another round is the same
+    game.sample += (game.sample ? " " : "") + chunk;
+  }
 }
 
 /* ==========================================================================
@@ -676,17 +725,9 @@ export function setupNewTest(text: string, options: { raw?: boolean; modify?: bo
    ========================================================================== */
 
 export function checkTestEnd(): void {
-  // Only words mode runs on and appends more prose as the clock goes; a code test is untimed.
-  if (config.mode === "words" && parseInt(config.timed) > 0 && game.timerRemaining > 0) {
-    const shuffled = [...wordPool(config.lang)].sort(() => Math.random() - 0.5);
-    const extra: string[] = [];
-    for (let i = 0; i < 15; i++) extra.push(shuffled[i % shuffled.length]);
-    const continuation = applyTextModifiers(extra.join(" "), {
-      punctuation: config.punctuation,
-      numbers: config.numbers,
-      capitalizeFirst: !/[.?!]$/.test(game.sample),
-    });
-    game.sample += " " + continuation;
+  // A timed run is ended by the clock, never by the text: top it up and keep typing.
+  if (isTimedRun() && game.timerRemaining > 0) {
+    game.sample += " " + continueText(TIMED_STOCK_WORDS);
     notify();
     return;
   }
@@ -1040,8 +1081,9 @@ export function handleKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  // Catch blank keys from JSON (&none / &trans)
-  if (mappedChar === "NONE" || mappedChar === "TRNS" || mappedChar === "TRANS") {
+  // A key with nothing on it (&none, a bare &trans, an unbound key) flashes like any other key
+  // but types nothing, so it never scores.
+  if (isBlankLabel(mappedChar)) {
     flashKey(pos);
     notify();
     return;
@@ -1135,6 +1177,9 @@ export function handleKeyDown(e: KeyboardEvent): void {
     game.totalPresses++;
     if (isCorrect) game.correctPresses++;
     game.typed += mappedChar;
+    // Feed a timed run as it goes: the lines under the caret are stocked before the caret arrives
+    // there, instead of the text appearing only once the current words have all been typed.
+    stockTimedSample();
     if (game.typed.length === game.sample.length && game.sample.length > 0) {
       checkTestEnd();
     }

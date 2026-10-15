@@ -37,8 +37,9 @@ under your hands.
 
 - **Layer-aware keycaps.** The firmware layer key never reaches the browser, so Zorotype infers the
   layer instead: it redraws the keycaps for the layer your next character needs, marks the key to
-  hold with `↑`, and follows the layer a press came from for a moment after you type it. `&trans`
-  keys show what they inherit from the layer below.
+  hold with `↑`, and follows the layer a press came from for a moment after you type it. Every
+  layer is drawn the way the keymap writes it, so a key the layer leaves empty — `&trans`, `&none`,
+  a position it never binds — shows empty instead of borrowing the character underneath it.
 - **Settings → Layout** draws the board you picked, exactly like the typing page, so you can check
   a new keyboard or keymap without leaving the panel — and it follows you when you change the
   keyboard.
@@ -47,8 +48,8 @@ under your hands.
   Planck, Preonic and more.
 - **Your keymap, parsed properly.** Import a ZMK `.keymap`/`.dtsi`, a Keymap Editor `.json`, or a
   QMK `info.json` for the hardware. Behaviours are unpacked (`&kp`, `&mt`, `&lt`, `&mo`, `&sl`,
-  `&to`, inline macros, `&trans`), modifiers are stripped to the base character, every layer is
-  read, and layer/bluetooth/reset keys become inert labels so they never pollute your stats.
+  `&to`, `&trans`, `&none`, inline macros), modifiers are stripped to the base character, every
+  layer is read, and layer/bluetooth/reset keys become inert labels so they never pollute your stats.
 - **Drag to match your keymap.** If a keycap came through wrong, drag it onto the right key: the
   board and the scoring both follow your correction (base layer).
 - **Derived starting point.** A board with no imported keymap still works: Zorotype derives a
@@ -57,7 +58,8 @@ under your hands.
 ### Training
 
 - **Modes** — `time` (15/30/60/120s), `words` (10/25/50/100), `news` (live text from NPR and NYT),
-  `code` (real source snippets) and `custom` (paste your own text).
+  `code` (real source snippets) and `custom` (paste your own text). A timed run keeps drawing fresh
+  words as you type, so the lines under the caret never run out before the clock does.
 - **Coding practice** — 48 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
   Java, C# and C++), chosen in Settings. Code is drawn with its real line breaks and indentation;
   press `Enter` at the end of a line and the next line's indent is filled in for you, so only the

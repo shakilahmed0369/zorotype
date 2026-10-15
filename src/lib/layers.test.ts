@@ -1,38 +1,45 @@
 import { describe, expect, it } from "vitest";
 import { HARDWARE } from "./hardware";
+import { importedLayersFrom } from "./keyboard";
 import {
   activatorPositions,
   buildLayerStack,
   findChar,
   findLabelPos,
+  isBlankLabel,
   labelToChar,
   layerToMap,
   predictedLayer,
   prettyLayerName,
   resolveTransparency,
+  resolvedLayerMap,
   visibleLayer,
   withLayerOverride,
 } from "./layers";
 import type { ImportedLayers, LayerStack } from "./types";
+import { parseZmkKeymap } from "./zmk";
 
 const POS = HARDWARE.corne.pos;
 
 // A three-layer Corne-shaped import: digits on Lower, a symbol on Raise, and the thumb that
-// opens Lower. NONE is how the parser spells `&trans`.
+// opens Lower. NONE is a key with nothing on it; TRANS is `&trans`, which keeps the key from the
+// layer below — the way a layer that only overrides a few keys is spelled.
 function corneLayers(over: Partial<ImportedLayers> = {}): ImportedLayers {
   const base = POS.map(() => "NONE");
   base[0] = "Q";
   base[1] = "W";
+  base[3] = "E";
   base[12] = "A";
   base[36] = "Lower";
 
-  const lower = POS.map(() => "NONE");
+  const lower = POS.map(() => "TRANS");
   lower[0] = "1";
   lower[1] = "2";
-  lower[12] = "NONE"; // transparent: the A stays where it is
+  lower[12] = "TRANS"; // transparent: the A stays where it is
 
-  const raise = POS.map(() => "NONE");
+  const raise = POS.map(() => "TRANS");
   raise[2] = "0"; // digits are not on Raise, so this inherits from Lower
+  raise[3] = "NONE"; // &none: nothing here, and nothing comes through from Base
 
   return {
     names: ["default_layer", "lower_layer", "raise_layer"],
@@ -68,7 +75,7 @@ describe("resolveTransparency", () => {
     const resolved = resolveTransparency(
       [
         ["A", "B"],
-        ["NONE", "C"],
+        ["TRANS", "C"],
       ],
       2
     );
@@ -76,12 +83,27 @@ describe("resolveTransparency", () => {
   });
 
   it("resolves a chain of transparent layers", () => {
-    const resolved = resolveTransparency([["A"], ["NONE"], ["NONE"]], 1);
+    const resolved = resolveTransparency([["A"], ["TRANS"], ["TRANS"]], 1);
     expect(resolved[2]).toEqual(["A"]);
+  });
+
+  it("leaves a key with nothing on it blank instead of borrowing the layer below", () => {
+    const resolved = resolveTransparency(
+      [
+        ["A", "B"],
+        ["NONE", "C"],
+      ],
+      2
+    );
+    expect(resolved[1]).toEqual(["NONE", "C"]);
   });
 
   it("leaves blank keys blank on the base layer", () => {
     expect(resolveTransparency([["NONE"]], 1)[0]).toEqual(["NONE"]);
+  });
+
+  it("stays blank where a layer stops early", () => {
+    expect(resolveTransparency([["A", "B"], ["C"]], 2)[1]).toEqual(["C", "NONE"]);
   });
 });
 
@@ -93,6 +115,27 @@ describe("labelToChar", () => {
     expect(labelToChar("Enter")).toBe("");
     expect(labelToChar("Lower")).toBe("");
     expect(labelToChar("NONE")).toBe("");
+    expect(labelToChar("TRANS")).toBe("");
+  });
+});
+
+describe("isBlankLabel", () => {
+  it("knows the keys with nothing on them", () => {
+    expect(isBlankLabel("NONE")).toBe(true);
+    expect(isBlankLabel("TRANS")).toBe(true);
+    expect(isBlankLabel("")).toBe(true);
+    expect(isBlankLabel(undefined)).toBe(true);
+  });
+
+  it("keeps every label the board draws", () => {
+    expect(isBlankLabel("A")).toBe(false);
+    expect(isBlankLabel("Space")).toBe(false);
+    expect(isBlankLabel("MO")).toBe(false);
+    expect(isBlankLabel("Lower")).toBe(false);
+  });
+
+  it("treats the space bar as a key that types", () => {
+    expect(isBlankLabel(" ")).toBe(false); // the space character the engine scores with
   });
 });
 
@@ -107,7 +150,14 @@ describe("buildLayerStack", () => {
     expect(built.names).toEqual(["Base", "Lower", "Raise"]);
     expect(built.raw).toHaveLength(3);
     expect(built.raw[1]).toHaveLength(POS.length);
+    expect(built.raw[1][POS.length - 1]).toBe("TRANS");
+  });
+
+  it("pads a layer that stops early with blank keys, not inherited ones", () => {
+    const built = stack({ names: ["Base", "Lower"], maps: [POS.map(() => "Q"), ["1"]], activators: [{}, {}] });
+    expect(built.raw[1]).toHaveLength(POS.length);
     expect(built.raw[1][POS.length - 1]).toBe("NONE");
+    expect(built.resolved[1][POS.length - 1]).toBe("NONE");
   });
 
   it("resolves transparency once, per layer", () => {
@@ -117,11 +167,48 @@ describe("buildLayerStack", () => {
     expect(built.resolved[1][0]).toBe("1"); // Lower's own digit
     expect(built.resolved[2][0]).toBe("1"); // Raise inherits through Lower
     expect(built.resolved[2][2]).toBe("0");
+    expect(built.resolved[2][3]).toBe("NONE"); // &none on Raise: Base's E does not come through
   });
 
   it("drops activators that point outside the stack", () => {
     const built = stack({ activators: [{ [POS[36]]: 9 }, {}, {}] });
     expect(built.activators[0]).toEqual({});
+  });
+});
+
+describe("a layer as the board draws it", () => {
+  const keymap = `
+    keymap {
+      compatible = "zmk,keymap";
+
+      default_layer {
+        bindings = <&kp A &kp S &kp D &mo 1>;
+      };
+
+      lower_layer {
+        bindings = <&none &trans &kp N1 &trans>;
+      };
+    };
+  `;
+
+  it("draws an empty key empty and reads a press on it through the layer below", () => {
+    const built = buildLayerStack("corne", importedLayersFrom(parseZmkKeymap(keymap, "corne")));
+    if (!built) throw new Error("expected a stack");
+    const map = layerToMap(built, 1);
+
+    expect(isBlankLabel(map[POS[0]])).toBe(true); // &none: nothing on this key
+    expect(isBlankLabel(map[POS[1]])).toBe(true); // &trans: nothing assigned here either
+    expect(map[POS[2]]).toBe("1"); // what the layer does assign
+    expect(isBlankLabel(map[POS[3]])).toBe(true);
+
+    // The press side still reads &trans as the pass-through it is, so the character scores.
+    const pressed = resolvedLayerMap(built, 1);
+    expect(pressed[POS[1]]).toBe("S");
+    expect(pressed[POS[3]]).toBe("Lower");
+
+    // A press of A reads as Base's key, not as the empty key on Lower.
+    expect(findChar(built, "s", 1)).toEqual({ pos: POS[1], layer: 1 });
+    expect(findChar(built, "a", 1)).toEqual({ pos: POS[0], layer: 0 });
   });
 });
 
@@ -170,11 +257,23 @@ describe("findLabelPos", () => {
 });
 
 describe("layerToMap", () => {
-  it("hands back the resolved layer in position -> label shape", () => {
+  it("hands back the layer the way the board draws it: what the layer assigns", () => {
     const map = layerToMap(stack(), 1);
     expect(map[POS[0]]).toBe("1");
-    expect(map[POS[12]]).toBe("A");
+    expect(map[POS[12]]).toBe("TRANS"); // &trans draws empty, it does not borrow Base's A
     expect(Object.keys(map)).toHaveLength(POS.length);
+  });
+
+  it("carries the blank of a key with nothing on it", () => {
+    expect(layerToMap(stack(), 2)[POS[3]]).toBe("NONE");
+  });
+});
+
+describe("resolvedLayerMap", () => {
+  it("fills &trans in from the layer below, which is how a press reads it", () => {
+    const map = resolvedLayerMap(stack(), 1);
+    expect(map[POS[0]]).toBe("1");
+    expect(map[POS[12]]).toBe("A");
   });
 });
 

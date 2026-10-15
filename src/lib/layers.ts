@@ -1,4 +1,4 @@
-import { HARDWARE } from "./hardware";
+import { BLANK, HARDWARE, TRANSPARENT_LABEL } from "./hardware";
 import type { HardwareId, ImportedLayers, LayerStack } from "./types";
 
 // How long the board keeps showing the layer a press came from. The firmware layer key itself
@@ -6,21 +6,36 @@ import type { HardwareId, ImportedLayers, LayerStack } from "./types";
 // this window is what makes the board follow that hold instead of snapping back instantly.
 export const LAYER_HOLD_MS = 900;
 
-const TRANSPARENT = new Set(["", "NONE", "TRANS", "TRNS", "▽", "Ø", "ø"]);
+// Which labels reach through to the layer below when a press is read (`&trans`), and which labels
+// have nothing on them at all. Non-character labels ("MO", "BT") are drawn but never scored.
+const TRANSPARENT = new Set([TRANSPARENT_LABEL, "TRNS", "▽", "Ø", "ø"]);
+const NO_CHARACTER = new Set([...TRANSPARENT, BLANK, ""]);
 const SPACE_ALIASES = new Set(["SPACE", "SPC"]);
 
-// The board's own normalisation (`&trans` comes through as NONE, SPACE as Space) is already
+// The board's own normalisation (`&trans` comes through as TRANS, SPACE as Space) is already
 // applied at parse time, so a label maps to a character exactly the way the engine scores it.
 export function labelToChar(label: string): string {
   const upper = (label || "").trim().toUpperCase();
-  if (upper.length === 0 || TRANSPARENT.has(upper)) return "";
+  if (upper.length === 0 || NO_CHARACTER.has(upper)) return "";
   if (SPACE_ALIASES.has(upper)) return " ";
   if (upper.length === 1) return upper.toLowerCase();
   return "";
 }
 
 function isTransparent(label: string | undefined): boolean {
-  return label === undefined || TRANSPARENT.has(label.trim().toUpperCase());
+  return TRANSPARENT.has((label ?? "").trim().toUpperCase());
+}
+
+/**
+ * A key with nothing on it: `&none`, a key the file never binds, and `&trans` — the board draws a
+ * layer exactly as the keymap writes it, so a pass-through key is empty on the board too. The
+ * renderer and the engine share this, so a key that looks empty is never scored either. The space
+ * bar types a space and is not a blank.
+ */
+export function isBlankLabel(label: string | undefined): boolean {
+  if (label === " ") return false;
+  const upper = (label ?? "").trim().toUpperCase();
+  return upper.length === 0 || NO_CHARACTER.has(upper);
 }
 
 /** `lower_layer` / `RAISE` / `3` -> "Lower" / "Raise" / "L3". */
@@ -37,8 +52,9 @@ function layerNames(names: string[] | null | undefined, count: number): string[]
   return Array.from({ length: count }, (_, index) => prettyLayerName(names?.[index] ?? "", index));
 }
 
-// `&trans` means "keep whatever the layer below has on this key", so a stack is only usable
-// once every layer has been overlaid on its predecessor. Chains resolve as they are built.
+// `&trans` means "keep whatever the layer below has on this key", so a stack is only usable for
+// reading presses once every layer has been overlaid on its predecessor. Chains resolve as they
+// are built. This is for the engine, not for the board: `layerToMap` draws what a layer assigns.
 export function resolveTransparency(raw: string[][], length: number): string[][] {
   const resolved: string[][] = [];
   raw.forEach((layer, index) => {
@@ -46,8 +62,8 @@ export function resolveTransparency(raw: string[][], length: number): string[][]
     resolved.push(
       Array.from({ length }, (_, i) => {
         const label = layer[i];
-        if (!isTransparent(label)) return label as string;
-        return below ? below[i] ?? "" : label ?? "";
+        if (!isTransparent(label)) return label ?? BLANK;
+        return below ? below[i] ?? BLANK : label ?? BLANK;
       })
     );
   });
@@ -55,7 +71,7 @@ export function resolveTransparency(raw: string[][], length: number): string[][]
 }
 
 function padLayer(layer: string[], length: number): string[] {
-  return Array.from({ length }, (_, i) => layer[i] ?? "");
+  return Array.from({ length }, (_, i) => layer[i] ?? BLANK);
 }
 
 function validActivators(activators: Record<string, number> | undefined, layerCount: number): Record<string, number> {
@@ -137,14 +153,26 @@ export function findLabelPos(stack: LayerStack | null, layer: number, ch: string
   return match ? match.pos : undefined;
 }
 
-/** One layer in the position -> label shape the renderer and the engine already work with. */
-export function layerToMap(stack: LayerStack, layer: number): Record<string, string> {
-  const labels = stack.resolved[layer] ?? stack.resolved[0] ?? [];
+function toMap(stack: LayerStack, labels: string[]): Record<string, string> {
   const map: Record<string, string> = {};
   stack.pos.forEach((pos, index) => {
     map[pos] = labels[index] ?? "";
   });
   return map;
+}
+
+/**
+ * One layer as the board draws it: exactly what that layer assigns. A key the file leaves empty —
+ * `&trans`, `&none`, a position it never spells out — is drawn empty instead of borrowing the
+ * label of the layer below, so the board shows the layer the way the keymap writes it.
+ */
+export function layerToMap(stack: LayerStack, layer: number): Record<string, string> {
+  return toMap(stack, stack.raw[layer] ?? stack.raw[0] ?? []);
+}
+
+/** The same layer with `&trans` filled in from below: the labels a press on it really produces. */
+export function resolvedLayerMap(stack: LayerStack, layer: number): Record<string, string> {
+  return toMap(stack, stack.resolved[layer] ?? stack.resolved[0] ?? []);
 }
 
 /** Replaces one layer's labels with an edited map — drag-remap only touches the base layer. */

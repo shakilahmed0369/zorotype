@@ -13,6 +13,11 @@ export function registerCustomBoard(board: BoardLayout, layouts: Record<string, 
   return id;
 }
 
+/** The label a key with nothing on it gets: `&none`, or a key the file never binds. */
+export const BLANK = "NONE";
+/** The label `&trans` gets — "keep whatever the layer below has on this key". */
+export const TRANSPARENT_LABEL = "TRANS";
+
 export const ZMK_EXCEPTIONS: Record<string, string> = {
   "N1": "1",
   "N2": "2",
@@ -44,9 +49,15 @@ export const ZMK_EXCEPTIONS: Record<string, string> = {
   "ESC": "Esc",
   "GRAVE": "`",
   "TILDE": "~",
-  "NONE": "NONE",
-  "TRNS": "NONE",
-  "TRANS": "NONE",
+  // Keys with nothing to type. `&trans` is the one blank that reaches through to the layer below,
+  // so the spellings of it and of "nothing at all" have to stay apart.
+  "NONE": BLANK,
+  "TRNS": TRANSPARENT_LABEL,
+  "TRANS": TRANSPARENT_LABEL,
+  "KC_NO": BLANK,
+  "XXXXXXX": BLANK,
+  "KC_TRNS": TRANSPARENT_LABEL,
+  "_______": TRANSPARENT_LABEL,
   "EQL": "=",
   "SLASH": "/",
   "BSLASH": "\\",
