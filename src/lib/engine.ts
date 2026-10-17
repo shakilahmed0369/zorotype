@@ -17,7 +17,7 @@ import {
 } from "./layers";
 import { LANGUAGES } from "./languages";
 import { applyTextModifiers } from "./modifiers";
-import { buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
+import { buildCodeMistakeDrill, buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
 import { playErrorSound } from "./sound";
 import {
   APP_VERSION,
@@ -615,7 +615,7 @@ export async function fetchNews(): Promise<void> {
 
 export function restartCurrentMode(): void {
   if (config.mode === "mistakes") {
-    generateWords();
+    practiceMistakes(); // rebuild the drill from the mistakes just made, still as code when it was code
     return;
   }
   if (config.mode === "words") generateWords();
@@ -805,9 +805,41 @@ function summarizeHistory(history: HistoryEntry[]) {
    MISTAKE PRACTICE
    ========================================================================== */
 
+/** True while the test on screen is typed as code: the code mode itself, and the drill made from it. */
+function isCodeTyping(): boolean {
+  return config.mode === "code" || (config.mode === "mistakes" && config.mistakesCode);
+}
+
 export function practiceMistakes(): void {
-  const mistakeKeys = Object.keys(game.mistakeChars);
-  if (mistakeKeys.length === 0) {
+  const wordsMissed = game.mistakeWords.size > 0;
+  const charsMissed = Object.keys(game.mistakeChars).length > 0;
+
+  if (isCodeTyping()) {
+    // A code drill replays the snippet's own lines — the ones the mistakes landed on — so it
+    // stays code, indentation and all, instead of turning into a paragraph of prose words.
+    if (!wordsMissed && !charsMissed) {
+      generateCode(); // a clean drill has nothing left to replay: move on to a new snippet
+      return;
+    }
+    const drill = buildCodeMistakeDrill({
+      snippet: config.codeLastSnippet ?? "",
+      mistakeWords: game.mistakeWords,
+      mistakeChars: game.mistakeChars,
+    });
+    if (drill.length === 0) {
+      generateCode(); // no snippet to replay (the drill predates one): start a fresh snippet
+      return;
+    }
+    game.practiceTargetChars = { ...game.mistakeChars };
+    config.mode = "mistakes";
+    config.mistakesCode = true;
+    persistConfig(config);
+    setupNewTest(drill.join("\n"), { raw: true });
+    return;
+  }
+
+  config.mistakesCode = false;
+  if (!charsMissed) {
     generateWords();
     return;
   }
@@ -939,11 +971,13 @@ const OS_TO_ZMK: Record<string, string> = {
   Backquote: "GRAVE",
 };
 
+// The run a press landed in, for the mistake drill: it stops at any whitespace, so a token at the
+// start of a code line is remembered on its own instead of dragging the line break in with it.
 function getCurrentWord(text: string, pos: number): string | null {
   let start = pos;
   let end = pos;
-  while (start > 0 && text[start - 1] !== " ") start--;
-  while (end < text.length && text[end] !== " ") end++;
+  while (start > 0 && !/\s/.test(text[start - 1])) start--;
+  while (end < text.length && !/\s/.test(text[end])) end++;
   const w = text.slice(start, end).toLowerCase();
   return w.length > 0 ? w : null;
 }
@@ -1091,10 +1125,10 @@ export function handleKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  // Code mode: Enter is the newline key, and the indentation of the line you land on is filled in
-  // for you. Only a running code test reaches this — Tab+Enter still restarts and Enter on the
-  // result screen still starts the next test, both handled above.
-  if (config.mode === "code" && mappedChar === "Enter" && game.testStarted && !game.testCompleted) {
+  // Code (and a drill made from it) treats Enter as the newline key, and the indentation of the
+  // line you land on is filled in for you. Only a running code test reaches this — Tab+Enter still
+  // restarts and Enter on the result screen still starts the next test, both handled above.
+  if (isCodeTyping() && mappedChar === "Enter" && game.testStarted && !game.testCompleted) {
     e.preventDefault();
     const atNewline = game.sample[game.typed.length] === "\n";
     game.totalPresses++;
@@ -1125,7 +1159,7 @@ export function handleKeyDown(e: KeyboardEvent): void {
       mappedChar,
       difficulty: config.difficulty,
       stopOnError: config.stopOnError,
-      code: config.mode === "code",
+      code: isCodeTyping(),
     })
   ) {
     e.preventDefault();
@@ -1170,10 +1204,10 @@ export function handleKeyDown(e: KeyboardEvent): void {
       if (expected && expected.match(/[a-z\u0621-\u064A]/)) {
         game.mistakeChars[expected] = (game.mistakeChars[expected] || 0) + 1;
       }
-      // A code "word" can run across a line break, and mistake practice would then drill it as a
-      // prose word, so only runs that stay on one line are remembered.
+      // The run the mistake landed in, kept for the drill. Runs stop at any whitespace, so a token
+      // at the start of a code line is remembered on its own rather than with the line before it.
       const cw = getCurrentWord(game.sample, game.typed.length);
-      if (cw && !/\s/.test(cw)) game.mistakeWords.add(cw);
+      if (cw) game.mistakeWords.add(cw);
     }
 
     game.totalPresses++;

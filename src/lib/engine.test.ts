@@ -136,4 +136,54 @@ describe("the result screen", () => {
     expect(getConfigState().mode).toBe("mistakes");
     expect(getGameState().testCompleted).toBe(false);
   });
+
+  it("drills fumbled code as code, not as a paragraph", () => {
+    const snippet = "function sum(rows) {\n  let total = 0;\n  return total;\n}";
+    setPref("mode", "code");
+    setPref("timed", "0");
+    setPref("codeLastSnippet", snippet);
+    setPref("mistakesCode", false);
+    setupNewTest(snippet, { raw: true });
+
+    // Type the snippet out with one slip: a wrong key where the "=" of the second line sits.
+    const game = getGameState();
+    while (game.typed.length < snippet.length) {
+      const char = snippet[game.typed.length];
+      if (char === "\n") press("Enter");
+      else press(game.typed.length === snippet.indexOf("=") ? "z" : char);
+    }
+    expect(game.testCompleted).toBe(true);
+    expect(game.mistakes).toBeGreaterThan(0);
+
+    press("Tab");
+    press("Space");
+
+    expect(getConfigState().mode).toBe("mistakes");
+    expect(getConfigState().mistakesCode).toBe(true);
+    // The drill is the snippet's own lines — not a space-joined paragraph of drill words.
+    expect(game.sample).toBe("function sum(rows) {\n  let total = 0;\n  return total;");
+    expect(game.typed).toBe("");
+    expect(game.testCompleted).toBe(false);
+
+    // Enter still advances through the drill the way code does: newline plus the line's indent.
+    while (game.sample[game.typed.length] !== "\n") press(game.sample[game.typed.length]);
+    press("Enter");
+    expect(game.typed.endsWith("\n  ")).toBe(true);
+  });
+
+  it("remembers a fumbled token at the start of a line on its own", () => {
+    setPref("mode", "code");
+    setPref("timed", "0");
+    setupNewTest("first;\nsecond;\nthird;", { raw: true });
+
+    // Type the first line, break it, then fumble the very first key of the second.
+    const game = getGameState();
+    while (game.sample[game.typed.length] !== "\n") press(game.sample[game.typed.length]);
+    press("Enter");
+    press("z"); // the second line wanted an "s"
+
+    // The run stops at the line break, so a drill can find that line on its own instead of the
+    // first line's tail being remembered with the second line's head.
+    expect([...game.mistakeWords]).toEqual(["second;"]);
+  });
 });

@@ -24,6 +24,7 @@ export const DEFAULT_CONFIG: Config = {
   mode: "words",
   codeLang: DEFAULT_CODE_LANGUAGE,
   codeLastSnippet: null,
+  mistakesCode: false,
   difficulty: "normal",
   stopOnError: "off",
   blindMode: false,

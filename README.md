@@ -60,17 +60,21 @@ under your hands.
 - **Modes** — `time` (15/30/60/120s), `words` (10/25/50/100), `news` (live text from NPR and NYT),
   `code` (real source snippets) and `custom` (paste your own text). A timed run keeps drawing fresh
   words as you type, so the lines under the caret never run out before the clock does.
-- **Coding practice** — 48 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
+- **Coding practice** — 64 snippets across 8 languages (JavaScript, TypeScript, Python, Rust, Go,
   Java, C# and C++), chosen in Settings. Code is drawn with its real line breaks and indentation;
   press `Enter` at the end of a line and the next line's indent is filled in for you, so only the
-  visible characters are typed. A fresh snippet is picked for every new test, and never the one you
-  just typed.
+  visible characters are typed. Between them the snippets use every character a standard board can
+  type — the number row, the shifted symbols, both cases and every digit — with a test enforcing it,
+  so coding practice trains the whole keyboard. A fresh snippet is picked for every new test, and
+  never the one you just typed.
 - **Input rules** — *normal*, *expert* (backspace locked) and *master* (frozen until you fix the
   error), plus stop-on-error for letters or words. Difficulty is recorded with every result.
 - **Scoring** — net WPM, raw WPM, real keypress accuracy, streaks, a per-finger accuracy breakdown,
   and a heatmap of the keys you missed.
 - **Mistake practice** — the algorithm builds a drill from your weakest characters and fingers; from
-  the result screen, `Tab` then `Space` starts it.
+  the result screen, `Tab` then `Space` starts it. A drill made after a code test stays code: it
+  replays the snippet's own lines — the ones the mistakes landed on, indentation and all — and
+  `Enter` fills in the next line's indent just like a code test.
 - **Focus when you want it** — blind mode hides the board entirely once you trust your hands;
   homerow highlighting, next-key hints and sound are each a toggle.
 

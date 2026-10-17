@@ -85,6 +85,8 @@ export interface Config {
   codeLang: string;
   /** The snippet the last code test used, so the next one can avoid repeating it. */
   codeLastSnippet: string | null;
+  /** Whether the current mistake drill replays code lines instead of prose words. */
+  mistakesCode: boolean;
   difficulty: Difficulty;
   stopOnError: StopOnError;
   blindMode: boolean;

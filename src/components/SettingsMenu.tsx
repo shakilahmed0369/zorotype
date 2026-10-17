@@ -140,7 +140,8 @@ export function SettingsMenu() {
               <span className={LABEL_TITLE}>Code Language</span>
               <span className={LABEL_DESC}>
                 Snippets for the code mode — {CODE_LANGUAGES.length} languages,{" "}
-                {CODE_LANGUAGES.reduce((total, lang) => total + lang.snippets.length, 0)} snippets
+                {CODE_LANGUAGES.reduce((total, lang) => total + lang.snippets.length, 0)} snippets;
+                between them, every key on the board
               </span>
             </div>
             <div className={ACTION}>

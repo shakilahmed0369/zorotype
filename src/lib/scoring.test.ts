@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildMap } from "./keyboard";
-import { buildMistakePractice, computePracticeResults, countStrictCorrectChars, evaluateTest } from "./scoring";
+import {
+  buildCodeMistakeDrill,
+  buildMistakePractice,
+  computePracticeResults,
+  countStrictCorrectChars,
+  evaluateTest,
+} from "./scoring";
 
 describe("countStrictCorrectChars", () => {
   it("counts fully correct words plus their trailing space", () => {
@@ -148,5 +154,83 @@ describe("buildMistakePractice", () => {
     });
     // weak pinky adds weight for its label chars, so the pool still fills the set
     expect(selected).toHaveLength(5);
+  });
+});
+
+describe("buildCodeMistakeDrill", () => {
+  const snippet = [
+    "function sum(rows) {",
+    "  let total = 0;",
+    "  for (const row of rows) {",
+    "    total += row.value;",
+    "  }",
+    "  return total;",
+    "}",
+  ].join("\n");
+
+  it("keeps the lines a mistake landed on, in the snippet's order", () => {
+    const drill = buildCodeMistakeDrill({
+      snippet,
+      mistakeWords: new Set(["row.value;"]),
+      mistakeChars: {},
+    });
+    expect(drill).toEqual([
+      "function sum(rows) {",
+      "  let total = 0;",
+      "    total += row.value;",
+    ]);
+  });
+
+  it("matches whole missed runs, not every line containing the letter", () => {
+    const drill = buildCodeMistakeDrill({
+      snippet: "let a = 1;\nlet data = 2;\nlet c = 3;\nlet q = 4;",
+      mistakeWords: new Set(["a", "c", "q"]),
+      mistakeChars: {},
+    });
+    // "data" contains an "a" but is not the run that was missed.
+    expect(drill).toEqual(["let a = 1;", "let c = 3;", "let q = 4;"]);
+  });
+
+  it("widens a wordless drill with the lines that use the missed letters", () => {
+    const drill = buildCodeMistakeDrill({
+      snippet,
+      mistakeWords: new Set(),
+      mistakeChars: { v: 1 },
+    });
+    expect(drill).toHaveLength(3);
+    expect(drill).toContain("    total += row.value;");
+  });
+
+  it("shifts an excerpt left to its own shallowest line", () => {
+    const drill = buildCodeMistakeDrill({
+      snippet: "    if (ready) {\n      run();\n    }",
+      mistakeWords: new Set(["run();"]),
+      mistakeChars: {},
+    });
+    expect(drill).toEqual(["if (ready) {", "  run();", "}"]);
+  });
+
+  it("caps the drill at six lines", () => {
+    const long = Array.from({ length: 8 }, (_, i) => `let v${i} = ${i};`).join("\n");
+    const drill = buildCodeMistakeDrill({
+      snippet: long,
+      mistakeWords: new Set(Array.from({ length: 8 }, (_, i) => `v${i}`)),
+      mistakeChars: {},
+    });
+    expect(drill).toHaveLength(6);
+    expect(drill[0]).toBe("let v0 = 0;");
+  });
+
+  it("drops blank lines while keeping the code shape", () => {
+    const drill = buildCodeMistakeDrill({
+      snippet: "one;\n\ntwo;\nthree;",
+      mistakeWords: new Set(["three;"]),
+      mistakeChars: {},
+    });
+    expect(drill).toEqual(["one;", "two;", "three;"]);
+  });
+
+  it("has nothing to drill for an empty snippet", () => {
+    expect(buildCodeMistakeDrill({ snippet: "", mistakeWords: new Set(["x"]), mistakeChars: {} })).toEqual([]);
   });
 });

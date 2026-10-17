@@ -4,6 +4,7 @@ import {
   CODE_LANGUAGES,
   codeLanguage,
   DEFAULT_CODE_LANGUAGE,
+  PRACTICE_CHARACTERS,
   pickSnippet,
 } from "./code-snippets";
 
@@ -47,6 +48,20 @@ describe("code snippet registry", () => {
         }
       }
     }
+  });
+
+  it("teaches every character a standard board can type", () => {
+    // The library is read as a whole: whichever languages a learner cycles through, the number
+    // row, the shifted symbols and every punctuation key have to turn up somewhere.
+    const taught = new Set(CODE_LANGUAGES.flatMap((lang) => lang.snippets).join(""));
+    const missing = [...PRACTICE_CHARACTERS].filter((char) => !taught.has(char));
+    expect(missing, `characters never typed: ${missing.join(" ")}`).toEqual([]);
+  });
+
+  it("lists the whole printable range as characters to teach", () => {
+    const printable: string[] = [];
+    for (let code = 0x20; code <= 0x7e; code++) printable.push(String.fromCharCode(code));
+    expect(new Set(PRACTICE_CHARACTERS)).toEqual(new Set(printable));
   });
 
   it("finds a language by id and falls back to the default for an unknown one", () => {

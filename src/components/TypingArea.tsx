@@ -14,8 +14,9 @@ export function TypingArea() {
 
   // A line of source is longer than a word, so code is drawn smaller: the three-line window has to
   // show a whole line without wrapping it, and white-space: pre-wrap is what makes the newlines and
-  // the indentation real in the first place.
-  const samplePx = config.mode === "code" ? 24 : 32;
+  // the indentation real in the first place. The drill made from a code test is code too.
+  const codeLayout = config.mode === "code" || (config.mode === "mistakes" && config.mistakesCode);
+  const samplePx = codeLayout ? 24 : 32;
   const lineHeight = samplePx * 1.6;
 
   const showSample = !panelOpen && !game.testCompleted;

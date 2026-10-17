@@ -26,6 +26,9 @@ export function Header() {
 
   const timed = parseInt(config.timed) > 0;
   const mode = config.mode;
+  // The drill built from a code test belongs to code: it keeps the code chip lit and the language
+  // button in the right-hand card.
+  const codeLayout = mode === "code" || (mode === "mistakes" && config.mistakesCode);
   const middleMode = mode === "news";
   const showMiddle = config.lang === "en";
   const middleLabel = ui.newsLoading ? "loading..." : "news";
@@ -69,7 +72,7 @@ export function Header() {
             time
           </button>
           <button
-            className={`${BTN} ${btnColor((mode === "words" && !timed) || mode === "mistakes")}`}
+            className={`${BTN} ${btnColor((mode === "words" && !timed) || (mode === "mistakes" && !config.mistakesCode))}`}
             onClick={() => setMode("words")}
             title="Words test"
           >
@@ -85,7 +88,7 @@ export function Header() {
             </button>
           )}
           <button
-            className={`${BTN} ${btnColor(mode === "code")}`}
+            className={`${BTN} ${btnColor(codeLayout)}`}
             onClick={() => setMode("code")}
             title="Type real code — pick a language in Settings"
           >
@@ -113,7 +116,7 @@ export function Header() {
             >
               {ui.newsLoading ? "loading..." : "change"}
             </button>
-          ) : mode === "code" ? (
+          ) : codeLayout ? (
             <button
               className={`${BTN} text-muted hover:text-correct`}
               onClick={generateCode}

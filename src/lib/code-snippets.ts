@@ -2,7 +2,8 @@
  * Source snippets for the code practice mode, bundled so a test never waits on the network.
  * A snippet is stored verbatim: `setupNewTest(..., { raw: true })` keeps it exactly as written, and
  * the registry test enforces the rules the renderer relies on — spaces for indentation in twos,
- * lines under 64 characters, ASCII only, no tabs, no trailing whitespace, no trailing newline.
+ * lines under 64 characters, ASCII only, no tabs, no trailing whitespace, no trailing newline —
+ * and that the library as a whole teaches every character on the board (see PRACTICE_CHARACTERS).
  */
 export interface CodeLanguageDef {
   id: string;
@@ -13,6 +14,19 @@ export interface CodeLanguageDef {
 }
 
 export const DEFAULT_CODE_LANGUAGE = "javascript";
+
+/**
+ * Every character the coding practice has to teach: the letters, the digits, the punctuation and
+ * the space bar of a standard board. A learner meets the number row and the shifted symbols in
+ * code long before prose needs them, so the registry test reads this list and fails when a
+ * character stops appearing anywhere in the library.
+ */
+export const PRACTICE_CHARACTERS = [
+  "abcdefghijklmnopqrstuvwxyz",
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  "0123456789",
+  "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ ",
+].join("");
 
 export const CODE_LANGUAGES: readonly CodeLanguageDef[] = [
   {
@@ -62,6 +76,19 @@ for (const email of active) {
     return {};
   }
 }`,
+      `const SLUG = /^[a-z0-9-]+$/;
+
+function tag(title) {
+  const clean = title.toLowerCase().replace(/\\s+/g, "-");
+  return \`#\${clean}\`;
+}`,
+      `function queueId(text) {
+  let hash = 5381;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 33) ^ text.charCodeAt(i);
+  }
+  return hash >>> 0;
+}`,
     ],
   },
   {
@@ -107,6 +134,19 @@ function canEdit(role: Role): boolean {
   const rows = await Promise.all(ids.map(id => fetchUser(id)));
   return rows.filter((row): row is User => row !== null);
 }`,
+      `type Query = Record<string, string>;
+
+function buildUrl(path: string, query: Query): string {
+  const parts = Object.entries(query)
+    .map(([key, value]) => \`\${key}=\${value}\`);
+  return \`/api/\${path}?\${parts.join("&")}\`;
+}`,
+      `const MAX_SIZE = 1024;
+const KEY = "session";
+
+function clamp(value: number, low: number, high: number) {
+  return Math.min(high, Math.max(low, value));
+}`,
     ],
   },
   {
@@ -150,6 +190,18 @@ for block in chunk(data, 3):
     for name, score in rows:
         lines.append(f"{name}: {score:>4}")
     return ", ".join(lines)`,
+      `import re
+
+def tidy(text):
+    # collapse runs of whitespace
+    return re.sub(r"\\s+", " ", text).strip()`,
+      `MASK = 0x7F
+
+def checksum(data):
+    total = 0
+    for byte in data:
+        total = (total ^ byte) & MASK
+    return ~total & MASK`,
     ],
   },
   {
@@ -196,6 +248,18 @@ impl Rect {
         *map.entry(word).or_insert(0) += 1;
     }
     map
+}`,
+      `#[derive(Clone, Copy)]
+struct Flags(u8);
+
+fn toggle(bits: u8, mask: u8) -> u8 {
+    bits ^ mask
+}`,
+      `const MAX_SIZE: usize = 512;
+const KEY: &str = "session";
+
+fn lines(text: &str) -> Vec<&str> {
+    text.split('\\n').collect()
 }`,
     ],
   },
@@ -248,6 +312,17 @@ for _, word := range words {
 if n, ok := counts["go"]; ok {
   fmt.Println(n)
 }`,
+      `type User struct {
+  Name string \`json:"name"\`
+  ID   int    \`json:"id"\`
+}`,
+      `type Number interface {
+  ~int | ~float64
+}
+
+func Toggle(bits uint8, mask uint8) uint8 {
+  return bits ^ mask
+}`,
     ],
   },
   {
@@ -291,6 +366,17 @@ for (Item item : items) {
     totals.merge(item.key(), item.qty(), Integer::sum);
 }
 return totals;`,
+      `public static void main(String[] args) {
+    String label = String.format("%d of %d", done, total);
+    double ratio = done * 100.0 / total;
+    System.out.println(label + " " + Math.round(ratio));
+}`,
+      `@Override
+public int hashCode() {
+    int mask = 0x7F;
+    int hash = name.hashCode() ^ mask;
+    return hash ^ (hash >>> 8);
+}`,
     ],
   },
   {
@@ -334,6 +420,14 @@ foreach (var word in words)
     }
     results.Add(user);
 }`,
+      `var message = $"Order #{order.Id} costs {order.Total:C}";
+Console.WriteLine(message);
+decimal tax = order.Total * 0.07m;
+return order.Total + Math.Round(tax, 2);`,
+      `string root = @"C:\\logs";
+string pattern = "*.log";
+var files = Directory.GetFiles(root, pattern);
+return files.Length % 10;`,
     ],
   },
   {
@@ -385,6 +479,18 @@ for (std::size_t i = 0; i < words.size(); ++i) {
   index[words[i]] = static_cast<int>(i);
 }
 return index;`,
+      `#include <string>
+#include <vector>
+
+std::size_t count(const std::vector<std::string>& words) {
+  return words.size();
+}`,
+      `std::uint8_t mask = 0x7F;
+std::uint8_t flags = ~value;
+
+for (std::uint8_t bit : bits) {
+  flags = (flags << 1) ^ (bit & mask);
+}`,
     ],
   },
 ];

@@ -149,6 +149,61 @@ export function buildMistakePractice(params: MistakePracticeParams): string[] {
   return selected;
 }
 
+export interface CodeMistakeDrillParams {
+  /** The snippet the mistakes were made on, kept exactly as the code mode types it. */
+  snippet: string;
+  /** Space-delimited runs the mistakes landed in, lowercased the way the engine records them. */
+  mistakeWords: Set<string>;
+  /** Missed letters, used to pick lines when no whole word was missed. */
+  mistakeChars: Record<string, number>;
+}
+
+/** Most lines a code drill carries: enough to be a test, short of a whole snippet. */
+const CODE_DRILL_MAX_LINES = 6;
+
+/** Least lines a code drill carries: a single line on its own is too short to be worth starting. */
+const CODE_DRILL_MIN_LINES = 3;
+
+/**
+ * The drill a code test leaves behind: the lines the mistakes landed on, copied out of the snippet
+ * so a Tab+Space drill is typed as code instead of as prose. A block too short to be a test is
+ * widened with the lines that use the missed letters, then with whatever else the snippet has, and
+ * the lines stay in the snippet's own order because the drill is typed top to bottom. The block is
+ * shifted left to its own shallowest line, so an excerpt keeps its shape but the test never opens
+ * on a run of spaces.
+ */
+export function buildCodeMistakeDrill(params: CodeMistakeDrillParams): string[] {
+  const lines = params.snippet.split("\n").filter((line) => line.trim().length > 0);
+  if (lines.length === 0) return [];
+
+  // A missed word is a whole space-delimited run of the sample, so a token match is exact: a
+  // one-character word like "a" must not pull in every line that happens to contain the letter.
+  const missedWords = new Set([...params.mistakeWords].map((word) => word.toLowerCase()));
+  const picked: number[] = [];
+  lines.forEach((line, index) => {
+    if (line.split(" ").some((token) => missedWords.has(token.toLowerCase()))) picked.push(index);
+  });
+
+  const chars = Object.keys(params.mistakeChars);
+  const widen = (matches: (line: string) => boolean): void => {
+    lines.forEach((line, index) => {
+      if (picked.length >= CODE_DRILL_MIN_LINES) return;
+      if (!picked.includes(index) && matches(line)) picked.push(index);
+    });
+  };
+  widen((line) => chars.some((char) => line.toLowerCase().includes(char)));
+  widen(() => true);
+
+  const drill = picked
+    .sort((a, b) => a - b)
+    .slice(0, CODE_DRILL_MAX_LINES)
+    .map((index) => lines[index]);
+
+  const indent = (line: string) => /^ */.exec(line)?.[0].length ?? 0;
+  const shift = Math.min(...drill.map(indent));
+  return shift > 0 ? drill.map((line) => line.slice(shift)) : drill;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
