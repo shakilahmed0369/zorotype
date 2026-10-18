@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEngine } from "@/hooks/useEngine";
 import { closeBoardModal, setHardware } from "@/lib/engine";
 import { searchBoards } from "@/lib/board-library";
@@ -16,6 +16,10 @@ const NOTE = "text-[11px] text-muted text-center";
 export function BoardModal() {
   const { config, ui } = useEngine();
   const [query, setQuery] = useState("");
+  const [highlightedId, setHighlightedId] = useState<string>(config.hw);
+  const listRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLElement | null>(null);
+  const navigatingRef = useRef(false);
 
   const builtIn = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -31,20 +35,95 @@ export function BoardModal() {
   const map = currentLayoutMap(config);
   const hasLetters = Object.values(map).some((label) => label);
 
+  // Flat list of every keyboard shown, in display order — drives up/down arrow navigation.
+  const items = useMemo(() => {
+    const list: string[] = [];
+    const seen = new Set<string>();
+    const push = (id: string) => {
+      if (seen.has(id)) return;
+      seen.add(id);
+      list.push(id);
+    };
+    // Only a board that is not already in the built-in/library lists (e.g. a file loaded in
+    // this session) gets its own entry at the top; a selected library board is already present
+    // below, so it is skipped here. This keeps the list stable while navigating with arrows.
+    const baseIds = new Set<string>([
+      ...builtIn.map((board) => board.id),
+      ...library.map((entry) => entry.id),
+    ]);
+    if (current && !baseIds.has(current.id)) push(current.id);
+    builtIn.forEach((board) => push(board.id));
+    library.forEach((entry) => push(entry.id));
+    return list;
+  }, [current, builtIn, library]);
+
+  useEffect(() => {
+    const onKey = async (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeBoardModal();
+        return;
+      }
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      e.preventDefault();
+      if (items.length === 0 || navigatingRef.current) return;
+      const delta = e.key === "ArrowDown" ? 1 : -1;
+      const currentIndex = items.findIndex((id) => id === highlightedId);
+      let nextIndex = currentIndex === -1 ? 0 : currentIndex + delta;
+      if (nextIndex < 0) nextIndex = 0;
+      if (nextIndex >= items.length) nextIndex = items.length - 1;
+      const nextId = items[nextIndex];
+      if (nextId && nextId !== highlightedId) {
+        navigatingRef.current = true;
+        setHighlightedId(nextId);
+        try {
+          await setHardware(nextId);
+        } finally {
+          setHighlightedId(config.hw);
+          navigatingRef.current = false;
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [items, highlightedId, config.hw]);
+
+  useEffect(() => {
+    const container = listRef.current;
+    const active = activeRef.current;
+    if (!container || !active) return;
+    const cRect = container.getBoundingClientRect();
+    const aRect = active.getBoundingClientRect();
+    if (aRect.top < cRect.top) {
+      container.scrollTop += aRect.top - cRect.top;
+    } else if (aRect.bottom > cRect.bottom) {
+      container.scrollTop += aRect.bottom - cRect.bottom;
+    }
+  }, [highlightedId]);
+
   // Picking a board only switches it: the modal stays open so boards can be compared against the
   // preview before it is closed.
-  const pick = (id: string) => {
-    void setHardware(id);
+  const pick = async (id: string) => {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    setHighlightedId(id);
+    try {
+      await setHardware(id);
+    } finally {
+      setHighlightedId(config.hw);
+      navigatingRef.current = false;
+    }
   };
 
   const row = (id: string, name: string, hint: string) => {
-    const active = config.hw === id;
+    const active = highlightedId === id;
     return (
       <button
         key={id}
+        data-active={active}
+        ref={active ? (el) => { if (el) activeRef.current = el; } : undefined}
         onClick={() => pick(id)}
         className={`flex items-baseline justify-between gap-3 text-left rounded-lg px-3 py-2 border-2 cursor-pointer font-[inherit] transition-colors duration-150 ${
-          active ? "border-accent text-accent" : "border-transparent text-correct hover:border-muted"
+          active ? "border-accent text-accent kb-active" : "border-transparent text-correct hover:border-muted"
         }`}
       >
         <span className="text-[13px] font-bold truncate">{name}</span>
@@ -104,7 +183,7 @@ export function BoardModal() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] flex flex-col gap-4">
+        <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] flex flex-col gap-4">
           {current && (
             <div className="flex flex-col gap-1">
               <div className="text-xs text-muted uppercase tracking-[1px] pl-1">
