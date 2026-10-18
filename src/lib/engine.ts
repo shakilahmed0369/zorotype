@@ -143,22 +143,38 @@ export async function init(): Promise<void> {
   const isReturningUser = cachedVer === APP_VERSION;
 
   if (!isReturningUser) {
-    localStorage.clear();
+    if (typeof localStorage.clear === "function") localStorage.clear();
     localStorage.setItem(VER_KEY, APP_VERSION);
   }
-
-  buildScriptLayouts(); // derive the arabic layout for every board
 
   Object.assign(config, loadStoredConfig());
   const restoredBoard = config.customBoard
     ? registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard))
     : null;
+  // A default (or stored) hardware id may name a library board, whose geometry is loaded on
+  // demand. Resolve it here so the board is registered before the fallback check below.
+  if (!HARDWARE[config.hw]) {
+    const entry = BOARD_CATALOG.find((candidate) => candidate.id === config.hw);
+    if (entry) {
+      const board = await libraryBoardLayout(entry.id, entry.name);
+      if (board) {
+        const registeredId = registerCustomBoard(board, defaultLayoutsFor(board));
+        config.customBoard = { ...board, id: registeredId };
+        config.hw = registeredId;
+        persistConfig(config);
+      }
+    }
+  }
   if (!LANGUAGES[config.lang]) config.lang = "en";
   if (!GAME_MODES.includes(config.mode)) config.mode = "words";
   if (!codeLanguage(config.codeLang)) config.codeLang = DEFAULT_CODE_LANGUAGE;
   // A saved hardware id can outlive the board it named — a library board whose data is gone, or a
   // layout file imported by an older build — and nothing can draw a board that is not registered.
-  if (!HARDWARE[config.hw]) config.hw = restoredBoard ?? DEFAULT_CONFIG.hw;
+  if (!HARDWARE[config.hw]) config.hw = restoredBoard ?? "go60";
+
+  // Derive script layouts (e.g. arabic) for every registered board, including any just restored
+  // or resolved above.
+  buildScriptLayouts();
   // The stored labels are a cache of the parser, so re-read the keymap text that produced them:
   // a change to how bindings are read reaches a keymap imported before it.
   reapplyStoredKeymaps();

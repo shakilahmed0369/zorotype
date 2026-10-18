@@ -35,8 +35,9 @@ export function isHomerow(hw: HardwareId, pos: string): boolean {
 /** A board's built-in layout, as position -> label. */
 export function buildMap(hw: HardwareId, layoutName: string): Record<string, string> {
   const map: Record<string, string> = {};
-  const posArray = HARDWARE[hw].pos;
-  const layoutArray = HARDWARE[hw].layouts[layoutName] || HARDWARE[hw].layouts["qwerty"] || [];
+  const board = HARDWARE[hw] ?? HARDWARE.go60;
+  const posArray = board.pos;
+  const layoutArray = board.layouts[layoutName] || board.layouts["qwerty"] || [];
   posArray.forEach((p, i) => {
     map[p] = layoutArray[i] ?? "";
   });
@@ -174,8 +175,9 @@ const PAD = 12;
 const KEY_INSET = 6;
 
 export function buildKeyRects(hw: HardwareId): KeyboardLayout {
-  const geo = HARDWARE[hw].geo;
-  const posArray = HARDWARE[hw].pos;
+  const board = HARDWARE[hw] ?? HARDWARE.go60;
+  const geo = board.geo;
+  const posArray = board.pos;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;

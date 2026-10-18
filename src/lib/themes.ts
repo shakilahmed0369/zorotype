@@ -87,7 +87,8 @@ export function applyTheme(name: string): void {
   const scheme: "dark" | "light" = isDark(theme.bg) ? "dark" : "light";
   const vars = themeVars(theme);
 
-  const root = document.documentElement;
+  const root = document?.documentElement;
+  if (!root || !root.style) return;
   for (const [key, value] of Object.entries(vars)) {
     root.style.setProperty(key, value);
   }

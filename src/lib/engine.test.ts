@@ -2,7 +2,7 @@
 // touches are stubbed: storage is a no-op and there is nothing focused to blur. Everything else is
 // the real store, driven the way a keydown drives it.
 import { describe, expect, it } from "vitest";
-import { getConfigState, getGameState, handleKeyDown, setPref, setupNewTest } from "./engine";
+import { getConfigState, getGameState, handleKeyDown, init, setPref, setupNewTest } from "./engine";
 
 (globalThis as unknown as Record<string, unknown>).localStorage = {
   getItem: () => null,
@@ -14,6 +14,7 @@ import { getConfigState, getGameState, handleKeyDown, setPref, setupNewTest } fr
 
 // Sound is the third browser API the engine reaches for: a mistake would build an AudioContext,
 // which Node has not got. None of these tests are about sound.
+await init();
 setPref("sound", false);
 
 /** A keydown the way the browser sends it: the character, its physical code, no modifiers. */

@@ -16,7 +16,7 @@ export const GAME_MODES: readonly GameMode[] = ["words", "news", "custom", "code
 export const DEFAULT_CONFIG: Config = {
   lang: "en",
   theme: DEFAULT_THEME,
-  hw: "go60",
+  hw: "lily58",
   customBoard: null,
   sourceKey: "qwerty",
   wordCount: "25",
