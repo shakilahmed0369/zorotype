@@ -16,7 +16,7 @@ const TURN_ON =
 export function LayoutPreview() {
   const { config, ui } = useEngine();
 
-  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw]);
+  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw, config.customBoard]);
   const map = currentLayoutMap(config);
   const layerCount = sourceLayersFor(config)?.maps.length ?? 0;
 

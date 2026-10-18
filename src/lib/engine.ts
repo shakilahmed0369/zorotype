@@ -148,6 +148,9 @@ export async function init(): Promise<void> {
   }
 
   Object.assign(config, loadStoredConfig());
+  // The default keyboard changed from go60 to lily58: move users who never chose a board (the old
+  // default, with no imported board) onto the new default. Explicit choices are left untouched.
+  if (config.hw === "go60" && !config.customBoard) config.hw = "lily58";
   const restoredBoard = config.customBoard
     ? registerCustomBoard(config.customBoard, defaultLayoutsFor(config.customBoard))
     : null;
@@ -156,12 +159,16 @@ export async function init(): Promise<void> {
   if (!HARDWARE[config.hw]) {
     const entry = BOARD_CATALOG.find((candidate) => candidate.id === config.hw);
     if (entry) {
-      const board = await libraryBoardLayout(entry.id, entry.name);
-      if (board) {
-        const registeredId = registerCustomBoard(board, defaultLayoutsFor(board));
-        config.customBoard = { ...board, id: registeredId };
-        config.hw = registeredId;
-        persistConfig(config);
+      try {
+        const board = await libraryBoardLayout(entry.id, entry.name);
+        if (board) {
+          const registeredId = registerCustomBoard(board, defaultLayoutsFor(board));
+          config.customBoard = { ...board, id: registeredId };
+          config.hw = registeredId;
+          persistConfig(config);
+        }
+      } catch {
+        // Keep the previous board if the library chunk cannot be loaded.
       }
     }
   }

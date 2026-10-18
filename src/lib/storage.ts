@@ -2,7 +2,7 @@ import { DEFAULT_CODE_LANGUAGE } from "./code-snippets";
 import { DEFAULT_THEME } from "./themes";
 import type { Config, GameMode, HistoryEntry } from "./types";
 
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.3.1";
 export const CONFIG_KEY = "zorotype_cfg";
 export const HISTORY_KEY = "zorotype_history";
 export const VER_KEY = "zorotype_ver";

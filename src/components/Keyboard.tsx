@@ -12,7 +12,9 @@ const BRAILLE_BLANK = "\u2800";
 
 export function Keyboard() {
   const { config, game, ui } = useEngine();
-  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw]);
+  // `config.hw` alone is not enough: a library board keeps the same id before and after it is
+  // resolved, so the memo would stay on the fallback geometry. `customBoard` changes when it lands.
+  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw, config.customBoard]);
   const dragPosRef = useRef<string | null>(null);
   const [ghost, setGhost] = useState<{ label: string; x: number; y: number } | null>(null);
 

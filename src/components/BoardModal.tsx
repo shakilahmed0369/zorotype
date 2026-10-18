@@ -31,7 +31,9 @@ export function BoardModal() {
   const library = useMemo(() => searchBoards(query), [query]);
   const current = config.customBoard;
 
-  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw]);
+  // `customBoard` is in the deps because a library board keeps its id across resolution, so the
+  // geometry would otherwise stay on the pre-resolution fallback.
+  const layout = useMemo(() => buildKeyRects(config.hw), [config.hw, config.customBoard]);
   const map = currentLayoutMap(config);
   const hasLetters = Object.values(map).some((label) => label);
 
