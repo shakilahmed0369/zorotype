@@ -14,7 +14,7 @@ export function ThemeButton() {
   return (
     <button
       onClick={openThemeModal}
-      title="Theme — pick from every palette"
+      data-tooltip="Theme — pick from every palette"
       aria-label={`Theme: ${theme.name}`}
       className="flex items-center h-9 px-3 bg-key rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-[1.06]"
     >

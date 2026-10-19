@@ -90,7 +90,7 @@ export function Keyboard() {
               key={`${name}-${index}`}
               onClick={() => setPinnedLayer(ui.pinnedLayer === index ? null : index)}
               aria-pressed={layer === index}
-              title={`Peek at ${name}${ui.pinnedLayer === index ? " (pinned)" : ""}`}
+              data-tooltip={`Peek at ${name}${ui.pinnedLayer === index ? " (pinned)" : ""}`}
               className={`px-[10px] py-[3px] rounded-md text-[11px] font-bold font-[inherit] cursor-pointer transition-colors duration-200 border-none ${
                 layer === index ? "bg-accent text-bg" : "bg-key text-muted hover:text-correct"
               } ${ui.pinnedLayer === index ? "ring-1 ring-accent" : ""}`}
@@ -120,8 +120,8 @@ export function Keyboard() {
           {!Object.values(workingMap).some((value) => value)
             ? "No letters for this board — import your .keymap (Settings → Matrix & Layout) or pick a built-in board"
             : stack && stack.names.length > 1
-              ? `Showing ${stack.names[layer]} — the board follows the layer you type in • Tab+Enter to restart`
-              : "Drag keys to match your keymap • Tab+Enter to restart"}
+              ? `Showing ${stack.names[layer]} — the board follows the layer you type in • Esc to restart`
+              : "Drag keys to match your keymap • Esc to restart"}
         </div>
       )}
 

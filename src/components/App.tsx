@@ -10,7 +10,6 @@ import { Header } from "./Header";
 import { HistoryPanel } from "./HistoryPanel";
 import { KeyboardButton } from "./KeyboardButton";
 import { SettingsMenu } from "./SettingsMenu";
-import { TabRestartOverlay } from "./TabRestartOverlay";
 import { ThemeButton } from "./ThemeButton";
 import { ThemeModal } from "./ThemeModal";
 import { Toast } from "./Toast";
@@ -45,7 +44,6 @@ export default function App() {
   return (
     <>
       <Toast />
-      <TabRestartOverlay />
       <Header />
       {ui.setupOpen && <SettingsMenu />}
       {ui.historyOpen && <HistoryPanel />}

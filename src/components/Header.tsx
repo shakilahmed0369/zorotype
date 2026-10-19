@@ -40,7 +40,6 @@ export function Header() {
           typingFocus ? "text-muted" : "text-correct hover:text-accent"
         }`}
         onClick={handleLogoClick}
-        title="Home / Exit Settings"
       >
         zorotype
       </div>
@@ -50,14 +49,12 @@ export function Header() {
           <button
             className={`${BTN} ${btnColor(config.punctuation)}`}
             onClick={() => setPref("punctuation", !config.punctuation)}
-            title="Capitals and , . ; : ? ! — capitals need Shift"
           >
             @ punctuation
           </button>
           <button
             className={`${BTN} ${btnColor(config.numbers)}`}
             onClick={() => setPref("numbers", !config.numbers)}
-            title="Mix numbers into the test"
           >
             # numbers
           </button>
@@ -67,14 +64,12 @@ export function Header() {
           <button
             className={`${BTN} ${btnColor(mode === "words" && timed)}`}
             onClick={() => setMode("time")}
-            title="Timed test"
           >
             time
           </button>
           <button
             className={`${BTN} ${btnColor((mode === "words" && !timed) || (mode === "mistakes" && !config.mistakesCode))}`}
             onClick={() => setMode("words")}
-            title="Words test"
           >
             words
           </button>
@@ -82,7 +77,6 @@ export function Header() {
             <button
               className={`${BTN} ${btnColor(middleMode)}`}
               onClick={() => setMode("news")}
-              title="Live news text"
             >
               {middleLabel}
             </button>
@@ -90,14 +84,12 @@ export function Header() {
           <button
             className={`${BTN} ${btnColor(codeLayout)}`}
             onClick={() => setMode("code")}
-            title="Type real code — pick a language in Settings"
           >
             code
           </button>
           <button
             className={`${BTN} ${btnColor(mode === "custom")}`}
             onClick={() => setMode("custom")}
-            title="Paste your own text"
           >
             custom
           </button>
@@ -105,14 +97,13 @@ export function Header() {
 
         <div className={CARD}>
           {mode === "custom" ? (
-            <button className={`${BTN} text-muted hover:text-correct`} onClick={openTextModal} title="Edit custom text">
+            <button className={`${BTN} text-muted hover:text-correct`} onClick={openTextModal}>
               change
             </button>
           ) : middleMode ? (
             <button
               className={`${BTN} text-muted hover:text-correct`}
               onClick={() => setMode("news")}
-              title="Load another set"
             >
               {ui.newsLoading ? "loading..." : "change"}
             </button>
@@ -120,7 +111,7 @@ export function Header() {
             <button
               className={`${BTN} text-muted hover:text-correct`}
               onClick={generateCode}
-              title={`New ${codeLanguage(config.codeLang)?.name ?? config.codeLang} snippet`}
+              data-tooltip={`New ${codeLanguage(config.codeLang)?.name ?? config.codeLang} snippet`}
             >
               {codeLanguage(config.codeLang)?.short ?? config.codeLang}
             </button>
@@ -130,7 +121,7 @@ export function Header() {
                 key={seconds}
                 className={`${BTN} ${btnColor(config.timed === seconds)}`}
                 onClick={() => setTimed(seconds)}
-                title={`${seconds} second test`}
+                data-tooltip={`${seconds} second test`}
               >
                 {seconds}
               </button>
@@ -141,7 +132,7 @@ export function Header() {
                 key={count}
                 className={`${BTN} ${btnColor(config.wordCount === count)}`}
                 onClick={() => setWordCount(count)}
-                title={`${count} words`}
+                data-tooltip={`${count} words`}
               >
                 {count}
               </button>
@@ -154,7 +145,6 @@ export function Header() {
             ui.historyOpen ? "text-accent" : "text-muted hover:text-accent"
           }`}
           onClick={toggleHistory}
-          title="Personal bests and history"
           aria-label="Personal bests and history"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5 block" fill="currentColor" aria-hidden="true">
@@ -170,7 +160,6 @@ export function Header() {
         <button
           className="bg-transparent border-none text-muted cursor-pointer transition-all duration-300 outline-none p-[5px] flex items-center hover:text-accent hover:rotate-90"
           onClick={toggleSettings}
-          title="Settings"
           aria-label="Settings"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5 block" fill="currentColor" aria-hidden="true">

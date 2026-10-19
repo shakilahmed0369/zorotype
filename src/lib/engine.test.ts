@@ -108,12 +108,11 @@ describe("the result screen", () => {
     expect(game.typed).toBe(typed);
   });
 
-  it("starts the next test on tab then enter", () => {
+  it("starts the next test on escape", () => {
     finish("one two");
     const game = getGameState();
 
-    press("Tab");
-    press("Enter");
+    press("Escape");
 
     expect(game.testCompleted).toBe(false);
     expect(game.typed).toBe("");
@@ -131,7 +130,6 @@ describe("the result screen", () => {
     expect(game.testCompleted).toBe(true);
     expect(game.mistakes).toBeGreaterThan(0);
 
-    press("Tab");
     press("Space");
 
     expect(getConfigState().mode).toBe("mistakes");
@@ -156,7 +154,6 @@ describe("the result screen", () => {
     expect(game.testCompleted).toBe(true);
     expect(game.mistakes).toBeGreaterThan(0);
 
-    press("Tab");
     press("Space");
 
     expect(getConfigState().mode).toBe("mistakes");

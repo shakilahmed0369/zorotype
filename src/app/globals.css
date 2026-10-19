@@ -14,6 +14,46 @@
   html {
     scrollbar-gutter: stable;
   }
+
+  /* Custom tooltips driven by data-tooltip, replacing native title tooltips. */
+  [data-tooltip] {
+    position: relative;
+  }
+  [data-tooltip]::before,
+  [data-tooltip]::after {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  [data-tooltip]::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--color-key);
+    z-index: 9999;
+  }
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-key);
+    color: var(--color-correct);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  [data-tooltip]:hover::before,
+  [data-tooltip]:hover::after {
+    opacity: 1;
+  }
 }
 
 @theme {

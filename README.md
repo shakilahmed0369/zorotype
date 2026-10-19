@@ -104,8 +104,8 @@ under your hands.
    capitals into the pool. `code` swaps the pool for real source snippets — pick the language in
    **Settings → Coding**.
 4. Start typing. The board shows where your fingers should go; the caret waits for you.
-5. Finish the test for WPM, accuracy and a heatmap — or `Escape` to stop early.
-6. `Tab` `Enter` restarts at any time.
+5. Finish the test for WPM, accuracy and a heatmap — or `Escape` to restart.
+6. `Escape` restarts at any time.
 
 ---
 
@@ -113,9 +113,8 @@ under your hands.
 
 | Keys | What it does |
 | --- | --- |
-| `Tab` `Enter` | Restart the current test — on the result screen, start the next one |
-| `Tab` `Space` | Drill your mistakes from the result screen |
-| `Escape` | End a running test early |
+| `Escape` | Restart the current test — on the result screen, start the next one |
+| `Space` | Drill your mistakes from the result screen |
 | `Ctrl`/`Alt`/`⌘` + `Backspace` | Delete the whole word you are typing |
 | `Escape` / `Enter` | Leave the Settings or History page |
 

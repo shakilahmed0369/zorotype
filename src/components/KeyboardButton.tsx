@@ -14,7 +14,7 @@ export function KeyboardButton() {
   return (
     <button
       onClick={openBoardModal}
-      title="Keyboard — browse every board and preview one"
+      data-tooltip="Keyboard — browse every board and preview one"
       aria-label={`Keyboard: ${name}`}
       className="flex items-center gap-2 max-w-[220px] h-9 bg-key text-muted font-[inherit] text-[13px] px-3 rounded-full border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-colors duration-300 hover:text-accent"
     >

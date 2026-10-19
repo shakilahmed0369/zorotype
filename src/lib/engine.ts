@@ -1091,31 +1091,34 @@ export function handleKeyDown(e: KeyboardEvent): void {
     ui.debugText = `debug: OS[${e.code}] | Pos[${pos || "none"}] | Mapped[${mappedChar}]`;
   }
 
-  // 2. SHORTCUTS (EVALUATED USING MAPPED CHARACTERS)
-  if (mappedChar === "Tab") {
-    e.preventDefault();
-    game.tabActive = true;
-    notify();
+  // Let modified keystrokes (Ctrl+R reload, Ctrl+C copy, …) fall through to the browser instead
+  // of being swallowed by the typing engine. Ctrl/Cmd/Alt+Backspace is the one exception.
+  if ((e.ctrlKey || e.metaKey || e.altKey) && e.key !== "Backspace") {
     return;
   }
-  if (game.tabActive && mappedChar === "Enter") {
+  // Tab never restarts the test (it interferes with typing). It only types a tab when the sample
+  // expects one; otherwise it does nothing.
+  if (mappedChar === "Tab") {
     e.preventDefault();
-    game.tabActive = false;
+    const atTab = !game.testCompleted && game.typed.length < game.sample.length && game.sample[game.typed.length] === "\t";
+    if (atTab) {
+      mappedChar = "\t";
+    } else {
+      notify();
+      return;
+    }
+  }
+  // Escape restarts the test, the way Monkeytype does with its "esc" quick-restart option.
+  if (mappedChar === "Escape") {
+    e.preventDefault();
     restartCurrentMode();
     return;
   }
-  // The result screen's other action is a Tab combination too: Enter and Space on their own stay
-  // inert there, so a keystroke that lands just as the clock runs out cannot wipe the result.
-  if (game.tabActive && game.testCompleted && (mappedChar === "Space" || mappedChar === " ")) {
+  // Space on the result screen launches mistake practice (Monkeytype: Space opens practice words).
+  if (game.testCompleted && (mappedChar === "Space" || mappedChar === " ")) {
     e.preventDefault();
-    game.tabActive = false;
     if (game.mistakes > 0) practiceMistakes();
     else notify();
-    return;
-  }
-  if (mappedChar === "Escape" && game.testStarted && !game.testCompleted) {
-    e.preventDefault();
-    endTest(true);
     return;
   }
   // Everything is ignored on the result screen: typing must not grow a finished test, and a press
@@ -1149,8 +1152,8 @@ export function handleKeyDown(e: KeyboardEvent): void {
   }
 
   // Code (and a drill made from it) treats Enter as the newline key, and the indentation of the
-  // line you land on is filled in for you. Only a running code test reaches this — Tab+Enter still
-  // restarts and Enter on the result screen still starts the next test, both handled above.
+  // line you land on is filled in for you. Only a running code test reaches this — Escape still
+  // restarts, both handled above.
   if (isCodeTyping() && mappedChar === "Enter" && game.testStarted && !game.testCompleted) {
     e.preventDefault();
     const atNewline = game.sample[game.typed.length] === "\n";

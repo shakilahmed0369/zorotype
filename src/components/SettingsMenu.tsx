@@ -73,7 +73,7 @@ function ScrollTop() {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Go to top"
-      title="Go to top"
+      data-tooltip="Go to top"
       className={`fixed bottom-[30px] right-[30px] z-[900] w-11 h-11 rounded-full bg-key text-correct font-[inherit] text-lg font-bold border-none cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.35)] transition-all duration-300 hover:text-accent ${
         visible ? "opacity-100" : "pointer-events-none opacity-0 translate-y-2"
       }`}
