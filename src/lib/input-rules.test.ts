@@ -1,5 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar, pressedChar } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, keyLabelToChar, physicalChar, pressedChar } from "./input-rules";
+
+describe("physicalChar", () => {
+  it("reads both characters of a printed key off the code", () => {
+    expect(physicalChar("Backquote", false)).toBe("`");
+    expect(physicalChar("Backquote", true)).toBe("~");
+    expect(physicalChar("Semicolon", false)).toBe(";");
+    expect(physicalChar("Semicolon", true)).toBe(":");
+    expect(physicalChar("BracketLeft", false)).toBe("[");
+    expect(physicalChar("BracketLeft", true)).toBe("{");
+    expect(physicalChar("Backslash", true)).toBe("|");
+  });
+
+  it("reads the number row, shifted and not", () => {
+    expect(physicalChar("Digit4", false)).toBe("4");
+    expect(physicalChar("Digit4", true)).toBe("$");
+    expect(physicalChar("Digit6", true)).toBe("^");
+    expect(physicalChar("Digit0", true)).toBe(")");
+  });
+
+  it("reads letters from their code, following Shift", () => {
+    expect(physicalChar("KeyA", false)).toBe("a");
+    expect(physicalChar("KeyA", true)).toBe("A");
+  });
+
+  it("has nothing for a key that carries no character", () => {
+    expect(physicalChar("Space", false)).toBe("");
+    expect(physicalChar("Escape", false)).toBe("");
+    expect(physicalChar("ArrowUp", true)).toBe("");
+    expect(physicalChar("", false)).toBe("");
+  });
+});
 
 describe("pressedChar", () => {
   it("takes a shifted symbol from what the OS delivered, not from the unshifted label", () => {

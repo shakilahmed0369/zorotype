@@ -20,15 +20,19 @@ setPref("sound", false);
 /** A keydown the way the browser sends it: the character, its physical code, no modifiers. */
 function press(ch: string): void {
   const code = ch === " " ? "Space" : /[a-z]/i.test(ch) ? `Key${ch.toUpperCase()}` : `Digit${ch}`;
+  pressRaw({ key: ch, code });
+}
+
+/** A keydown with every part of the event spelled out — for the shapes `press` cannot make. */
+function pressRaw(event: Partial<KeyboardEvent>): void {
   handleKeyDown({
-    key: ch,
-    code,
     repeat: false,
     ctrlKey: false,
     metaKey: false,
     altKey: false,
     shiftKey: false,
     preventDefault: () => {},
+    ...event,
   } as unknown as KeyboardEvent);
 }
 
@@ -50,6 +54,13 @@ describe("typing", () => {
     press("b");
     press(" ");
     expect(getGameState().typed).toBe("ab ");
+  });
+
+  it("types the grave key as the backtick the event carries", () => {
+    setPref("timed", "0");
+    setupNewTest("`a");
+    pressRaw({ key: "`", code: "Backquote" });
+    expect(getGameState().typed).toBe("`");
   });
 });
 
@@ -183,5 +194,61 @@ describe("the result screen", () => {
     // The run stops at the line break, so a drill can find that line on its own instead of the
     // first line's tail being remembered with the second line's head.
     expect([...game.mistakeWords]).toEqual(["second;"]);
+  });
+});
+
+// The grave key of a US-International or European layout is a dead key: the OS holds the character
+// back until the next press and reports `Dead`, so a trainer that reads only the event has nothing
+// to score. The physical key is the one thing left that says what was pressed.
+describe("a dead key", () => {
+  it("types its character when the text is waiting for it", () => {
+    setPref("mode", "code");
+    setPref("timed", "0");
+    setupNewTest("`a");
+
+    pressRaw({ key: "Dead", code: "Backquote" });
+
+    expect(getGameState().typed).toBe("`");
+  });
+
+  it("reads the shifted character off the same key", () => {
+    setPref("timed", "0");
+    setupNewTest("~a");
+
+    pressRaw({ key: "Dead", code: "Backquote", shiftKey: true });
+
+    expect(getGameState().typed).toBe("~");
+  });
+
+  it("is left to the OS when the text wants another character, so composition still works", () => {
+    setPref("timed", "0");
+    setupNewTest("ea");
+
+    pressRaw({ key: "Dead", code: "Quote" }); // "´" on the way to "é"
+    expect(getGameState().typed).toBe("");
+
+    // and the composed character arrives on the key that finishes it
+    press("e");
+    expect(getGameState().typed).toBe("e");
+  });
+});
+
+describe("AltGr", () => {
+  it("types the character AltGr put on the key", () => {
+    setPref("timed", "0");
+    setupNewTest("`a");
+
+    pressRaw({ key: "`", code: "Backquote", ctrlKey: true, altKey: true, getModifierState: () => true });
+
+    expect(getGameState().typed).toBe("`");
+  });
+
+  it("still lets a window shortcut through to the browser", () => {
+    setPref("timed", "0");
+    setupNewTest("copy");
+
+    pressRaw({ key: "c", code: "KeyC", ctrlKey: true, getModifierState: () => false });
+
+    expect(getGameState().typed).toBe("");
   });
 });

@@ -3,7 +3,7 @@ import { BOARD_CATALOG } from "./board-catalog";
 import { defaultLayoutsFor, libraryBoardLayout } from "./board-library";
 import { autoIndentAfter, codeLanguage, DEFAULT_CODE_LANGUAGE, pickSnippet } from "./code-snippets";
 import { registerCustomBoard, HARDWARE } from "./hardware";
-import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, pressedChar } from "./input-rules";
+import { controlKey, deletePreviousWord, isCharCorrect, isInputBlocked, physicalChar, pressedChar } from "./input-rules";
 import { buildScriptLayouts, currentLayoutMap, currentMatchMap, getMirroredMap, importedLayersFrom, mirrorPos, sourceLayersFor, usesScriptLayout } from "./keyboard";
 import {
   LAYER_HOLD_MS,
@@ -1037,41 +1037,52 @@ export function handleKeyDown(e: KeyboardEvent): void {
     e.preventDefault();
   }
 
-  let osKey = OS_TO_ZMK[e.code] || e.code.replace("Key", "").replace("Digit", "").toUpperCase();
-  if (e.key.length === 1) osKey = e.key.toUpperCase();
+  // A dead key holds its character back until the next press, so the OS reports no character at all
+  // ("Dead" on the grave key of a US-International or European layout). The physical key still says
+  // what was pressed, but the press is only that character when the text is waiting for it: anywhere
+  // else the dead key opens a composition — "é" from "´" then "e" — which has to be left to the OS,
+  // so guessing at it would put a character in the text the user never typed.
+  const deadChar = e.key.length === 1 ? "" : physicalChar(e.code, e.shiftKey);
+  const delivered = e.key.length === 1 ? e.key : deadChar === game.sample[game.typed.length] ? deadChar : "";
+  const eventKey = delivered || e.key;
 
-  let mappedChar = e.key;
+  let osKey = OS_TO_ZMK[e.code] || e.code.replace("Key", "").replace("Digit", "").toUpperCase();
+  if (delivered) osKey = delivered.toUpperCase();
+
+  let mappedChar = eventKey;
   const sourceMap = game.sourceMap;
   const now = Date.now();
 
   let pos = Object.keys(sourceMap).find((p) => {
     const s = (sourceMap[p] || "").toUpperCase();
-    return s === osKey || s === e.key.toUpperCase() || s === OS_TO_ZMK[e.code];
+    return s === osKey || s === eventKey.toUpperCase() || s === OS_TO_ZMK[e.code];
   });
 
   // A character only an upper layer can produce (a digit or symbol behind a thumb key) has no
   // key in the base map, so it is traced through the imported stack. The layer it comes from
   // is the only evidence of a held thumb the browser ever gets.
   let srcLayer = 0;
-  if (!pos && game.sourceStack && e.key.length === 1) {
-    const traced = findChar(game.sourceStack, e.key, shownLayer());
+  if (!pos && game.sourceStack && delivered) {
+    const traced = findChar(game.sourceStack, delivered, shownLayer());
     if (traced) {
       pos = traced.pos;
       srcLayer = traced.layer;
     }
   }
 
-  const isUpperCase = e.key === e.key.toUpperCase() && e.key !== e.key.toLowerCase();
+  const isUpperCase = eventKey === eventKey.toUpperCase() && eventKey !== eventKey.toLowerCase();
 
   // Control keys are read from the key that was pressed (and from the event itself as a fallback),
   // so dragging a keycap never turns Backspace or the space bar into whatever sits at that position.
-  const control = controlKey(pos ? sourceMap[pos] : null) ?? controlKey(e.key);
+  // A press that delivered no character has nothing to be read as: a dead key would otherwise be
+  // scored as the label sitting under it, for a character the OS is still holding back.
+  const control = controlKey(pos ? sourceMap[pos] : null) ?? controlKey(eventKey);
   if (control !== null) {
     mappedChar = control;
-  } else if (pos) {
+  } else if (pos && delivered) {
     const workingMap = layoutMapFor(srcLayer);
     if (workingMap && workingMap[pos] !== undefined) {
-      mappedChar = pressedChar(workingMap[pos], e.key, e.shiftKey, isUpperCase);
+      mappedChar = pressedChar(workingMap[pos], eventKey, e.shiftKey, isUpperCase);
     }
   }
 
@@ -1092,8 +1103,11 @@ export function handleKeyDown(e: KeyboardEvent): void {
   }
 
   // Let modified keystrokes (Ctrl+R reload, Ctrl+C copy, …) fall through to the browser instead
-  // of being swallowed by the typing engine. Ctrl/Cmd/Alt+Backspace is the one exception.
-  if ((e.ctrlKey || e.metaKey || e.altKey) && e.key !== "Backspace") {
+  // of being swallowed by the typing engine. AltGr is not one of those — Windows reports it as
+  // Ctrl+Alt, and it is how "`", "~", "{" and their neighbours are typed on many European
+  // layouts. Ctrl/Cmd/Alt+Backspace is the other exception.
+  const altGraph = typeof e.getModifierState === "function" && e.getModifierState("AltGraph");
+  if ((e.ctrlKey || e.metaKey || e.altKey) && !altGraph && e.key !== "Backspace") {
     return;
   }
   // Tab never restarts the test (it interferes with typing). It only types a tab when the sample

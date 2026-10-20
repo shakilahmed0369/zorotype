@@ -41,6 +41,43 @@ export function keyLabelToChar(label: string, isUpperCase: boolean): string {
   return upper; // multi-character labels (MO, LShift, …) never score
 }
 
+// The two characters a printed key carries on a US layout. Only a dead key needs them: the OS
+// holds the character back until the next press and reports `Dead` instead, so the physical key is
+// the one thing left that says what was pressed.
+const PHYSICAL_CHARS: Record<string, [string, string]> = {
+  Backquote: ["`", "~"],
+  Minus: ["-", "_"],
+  Equal: ["=", "+"],
+  BracketLeft: ["[", "{"],
+  BracketRight: ["]", "}"],
+  Backslash: ["\\", "|"],
+  IntlBackslash: ["\\", "|"],
+  Semicolon: [";", ":"],
+  Quote: ["'", '"'],
+  Comma: [",", "<"],
+  Period: [".", ">"],
+  Slash: ["/", "?"],
+  "1": ["1", "!"],
+  "2": ["2", "@"],
+  "3": ["3", "#"],
+  "4": ["4", "$"],
+  "5": ["5", "%"],
+  "6": ["6", "^"],
+  "7": ["7", "&"],
+  "8": ["8", "*"],
+  "9": ["9", "("],
+  "0": ["0", ")"],
+};
+
+/** The character a physical key carries on a US layout, or "" for a key that carries none. */
+export function physicalChar(code: string, shift: boolean): string {
+  const digit = /^Digit([0-9])$/.exec(code);
+  const letter = /^Key([A-Z])$/.exec(code);
+  if (letter) return shift ? letter[1] : letter[1].toLowerCase();
+  const pair = digit ? PHYSICAL_CHARS[digit[1]] : PHYSICAL_CHARS[code];
+  return pair ? pair[shift ? 1 : 0] : "";
+}
+
 /**
  * The character a press produces. A keycap label spells the unshifted character, so a shifted
  * symbol — ":" for Shift+";", "!" for Shift+"1" — can only come from what the OS delivered; the
